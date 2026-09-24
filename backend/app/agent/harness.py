@@ -3,6 +3,7 @@ pauses on ask_user, or exhausts the step budget."""
 
 from __future__ import annotations
 
+import asyncio
 import json
 import re
 from datetime import datetime
@@ -10,14 +11,14 @@ from typing import Any
 
 import jsonschema
 
-from ..llm.base import Completion, Message, Provider, TextDelta, ToolCall, ToolResult
+from ..llm.base import Completion, Message, Provider, TextDelta, TextReset, ToolCall, ToolResult
 from ..paths import PROMPTS, SKILLS
 from ..tools import agentic, hiking
 from ..tools.base import ToolBox, ToolContext, ToolOutput
 from ..tools.data import HKT
 from .session import Emit, Pending, Session
 
-MAX_STEPS = 10
+MAX_STEPS = 24  # a plan takes ~12 steps (a skill per phase, 3 checks, map, plan), plus retries after gate blocks
 
 
 def build_toolbox() -> ToolBox:
@@ -54,12 +55,13 @@ class Agent:
                 await emit({"type": "reset_ok"})
                 return
             if kind == "set_scenario":
-                session.scenario = event.get("scenario") or "live"
+                session.set_scenario(event.get("scenario") or "live")
                 await emit({"type": "scenario", "scenario": session.scenario})
                 return
             if kind == "card_answer":
                 if not session.pending or session.pending.ask_call_id != event.get("call_id"):
                     await emit({"type": "error", "message": "No question is waiting for that answer."})
+                    await emit({"type": "assistant_done"})  # the client set busy when it sent the answer
                     return
                 self._resolve_pending(session, {"answers": event.get("answers", [])})
             elif kind == "user_message":
@@ -72,6 +74,7 @@ class Agent:
                     session.messages.append(Message("user", text=text))
             else:
                 await emit({"type": "error", "message": f"Unknown event type {kind!r}"})
+                await emit({"type": "assistant_done"})
                 return
             await self._loop(session, emit)
 
@@ -93,6 +96,8 @@ class Agent:
                 async for ev in self.provider.stream(system, session.messages, self.toolbox.specs):
                     if isinstance(ev, TextDelta):
                         await emit({"type": "assistant_delta", "text": ev.text})
+                    elif isinstance(ev, TextReset):
+                        await emit({"type": "assistant_reset"})
                     else:
                         completion = ev
             except Exception as e:  # provider/network failure: surface it, keep the session usable
@@ -101,32 +106,47 @@ class Agent:
                 return
             assert completion is not None
             msg = completion.message
-            session.messages.append(msg)
+            # An empty turn (e.g. a refusal before any output) would be rejected when replayed.
+            if msg.text or msg.tool_calls:
+                session.messages.append(msg)
             session.trace({"assistant": msg.text, "tool_calls": [c.__dict__ for c in msg.tool_calls],
                            "stop": completion.stop, "usage": completion.usage})
             if completion.stop == "refusal":
                 await traced_emit({"type": "error", "message": "The model declined to answer this request."})
+            elif completion.stop == "max_tokens":
+                await traced_emit({"type": "error", "message": "The reply was cut off (max_tokens reached)."})
             if not msg.tool_calls:
                 await traced_emit({"type": "assistant_done"})
                 return
-            results, ask_id = await self._run_tools(session, msg.tool_calls, traced_emit)
-            if ask_id:
-                session.pending = Pending(ask_id, results)
-                await traced_emit({"type": "assistant_done", "waiting_for": ask_id})
+            results: list[ToolResult] = []
+            try:
+                ask = await self._run_tools(session, msg.tool_calls, traced_emit, results)
+            except (asyncio.CancelledError, Exception):
+                # Every tool_use in history needs a result, or each later request is rejected.
+                done = {r.call_id for r in results}
+                results += [ToolResult(c.id, "Interrupted before this tool finished.", is_error=True)
+                            for c in msg.tool_calls if c.id not in done]
+                session.messages.append(Message("tool", tool_results=results))
+                raise
+            if ask:
+                session.pending = Pending(ask[0], results, ask[1])
+                await traced_emit({"type": "assistant_done", "waiting_for": ask[0]})
                 return
             session.messages.append(Message("tool", tool_results=results))
         await traced_emit({"type": "error", "message": f"Stopped after {self.max_steps} steps without an answer."})
         await traced_emit({"type": "assistant_done"})
 
-    async def _run_tools(self, session: Session, calls: list[ToolCall], emit: Emit) -> tuple[list[ToolResult], str | None]:
-        results: list[ToolResult] = []
-        ask_id: str | None = None
+    async def _run_tools(
+        self, session: Session, calls: list[ToolCall], emit: Emit, results: list[ToolResult]
+    ) -> tuple[str, list[dict[str, Any]]] | None:
+        """Run the calls in order, appending to `results`. Returns (call_id, cards) if ask_user paused."""
+        ask: tuple[str, list[dict[str, Any]]] | None = None
         for call in calls:
             tool = self.toolbox.tools.get(call.name)
             await emit({"type": "tool_trace", "call_id": call.id, "name": call.name, "args": call.arguments, "status": "start"})
             if tool is None:
                 out = ToolOutput(f"Unknown tool {call.name!r}", is_error=True, summary="unknown tool")
-            elif call.name == "ask_user" and ask_id:
+            elif call.name == "ask_user" and ask:
                 out = ToolOutput("Only one ask_user per turn; merge the questions into one call.", is_error=True, summary="duplicate ask")
             else:
                 try:
@@ -139,7 +159,7 @@ class Agent:
             status = "blocked" if out.blocked else "error" if out.is_error else "waiting" if out.pause else "ok"
             await emit({"type": "tool_trace", "call_id": call.id, "name": call.name, "status": status, "summary": out.summary})
             if out.pause:
-                ask_id = call.id
+                ask = (call.id, out.content or [])
             else:
                 results.append(ToolResult(call.id, _to_text(out.content), out.is_error))
-        return results, ask_id
+        return ask

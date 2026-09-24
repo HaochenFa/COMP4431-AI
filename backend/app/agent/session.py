@@ -19,7 +19,12 @@ class Ledger:
     """What this session has actually checked, so present_plan/refuse can be gated on it."""
 
     closures_checked: set[str] = field(default_factory=set)  # trail ids
+    closed: set[str] = field(default_factory=set)  # trail ids check_closures reported closed
     weather_dates: set[str] = field(default_factory=set)  # YYYY-MM-DD
+    no_go: dict[str, list[str]] = field(default_factory=dict)  # date -> no-go warning codes that apply to it
+    warnings: dict[str, list[str]] = field(default_factory=dict)  # date -> every applicable warning code (incl. WHOT)
+    forecast: dict[str, str] = field(default_factory=dict)  # date -> forecast text
+    max_c: dict[str, float] = field(default_factory=dict)  # date -> forecast max temperature
     sunset: dict[str, str] = field(default_factory=dict)  # date -> HH:MM
 
 
@@ -27,6 +32,7 @@ class Ledger:
 class Pending:
     ask_call_id: str
     results: list[ToolResult]  # results of sibling calls from the same assistant turn
+    cards: list[dict[str, Any]] = field(default_factory=list)  # re-sent in `hello` after a reconnect
 
 
 @dataclass
@@ -44,6 +50,12 @@ class Session:
         self.ledger = Ledger()
         self.pending = None
         self.loaded_skills.clear()
+
+    def set_scenario(self, scenario: str) -> None:
+        """Checks made under another scenario no longer hold, so the gate must see them re-run."""
+        if scenario != self.scenario:
+            self.ledger = Ledger(sunset=self.ledger.sunset)  # sunset is scenario-independent
+        self.scenario = scenario
 
     def trace(self, event: dict[str, Any]) -> None:
         TRACES.mkdir(parents=True, exist_ok=True)

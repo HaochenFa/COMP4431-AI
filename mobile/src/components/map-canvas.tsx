@@ -18,7 +18,7 @@ export function MapCanvas({ tracks, bottomInset }: { tracks: Track[]; bottomInse
   useEffect(() => {
     const focus = [...tracks].reverse().find((t) => t.role === 'primary') ?? tracks[tracks.length - 1];
     if (!focus) return;
-    map.current?.fitToCoordinates(focus.coords.map(toLatLng), {
+    map.current?.fitToCoordinates(focus.segments.flat().map(toLatLng), {
       edgePadding: { top: 80, right: 40, bottom: bottomInset + 40, left: 40 },
       animated: true,
     });
@@ -35,19 +35,23 @@ export function MapCanvas({ tracks, bottomInset }: { tracks: Track[]; bottomInse
         showsCompass={false}
         toolbarEnabled={false}>
         {tracks.map((t) => {
-          const coords = t.coords.map(toLatLng);
           const dashed = t.role !== 'primary';
           return [
-            // Dark casing under the coloured line, like a trail on a topo map.
-            <Polyline key={`${t.trail_id}-case`} coordinates={coords} strokeColor={C.ink} strokeWidth={t.role === 'primary' ? 8 : 5} zIndex={1} />,
-            <Polyline
-              key={`${t.trail_id}-line`}
-              coordinates={coords}
-              strokeColor={TRACK_COLOR[t.role]}
-              strokeWidth={t.role === 'primary' ? 5 : 3}
-              lineDashPattern={dashed ? [8, 6] : undefined}
-              zIndex={2}
-            />,
+            ...t.segments.flatMap((seg, i) => {
+              const coords = seg.map(toLatLng);
+              return [
+                // Dark casing under the coloured line, like a trail on a topo map.
+                <Polyline key={`${t.trail_id}-${i}-case`} coordinates={coords} strokeColor={C.ink} strokeWidth={t.role === 'primary' ? 8 : 5} zIndex={1} />,
+                <Polyline
+                  key={`${t.trail_id}-${i}-line`}
+                  coordinates={coords}
+                  strokeColor={TRACK_COLOR[t.role]}
+                  strokeWidth={t.role === 'primary' ? 5 : 3}
+                  lineDashPattern={dashed ? [8, 6] : undefined}
+                  zIndex={2}
+                />,
+              ];
+            }),
             ...t.markers.map((m) => (
               <Marker key={`${t.trail_id}-${m.kind}`} coordinate={toLatLng(m.coord)} title={m.label} description={t.name} anchor={{ x: 0.5, y: 0.5 }}>
                 <View style={[styles.pin, { backgroundColor: m.kind === 'start' ? TRACK_COLOR[t.role] : C.ink }]}>

@@ -105,17 +105,22 @@ function Citations({ items }: { items: Citation[] }) {
   );
 }
 
-const stars = (n?: number | null) => (n ? '★'.repeat(n) + '☆'.repeat(5 - n) : '');
+const stars = (n?: number | null) => {
+  const k = Math.min(5, Math.max(0, Math.round(n ?? 0)));
+  return k ? '★'.repeat(k) + '☆'.repeat(5 - k) : '';
+};
 
 export function PlanCard({ plan }: { plan: TripPlan }) {
   const p = plan.primary;
-  const transit = `https://www.google.com/maps/dir/?api=1&travelmode=transit&destination=${encodeURIComponent(p.name + ' Hong Kong')}`;
+  // Route to the trail's start point, not its name (which geocodes to somewhere arbitrary along it).
+  const destination = p.start_coord ? p.start_coord.join(',') : `${p.start ?? p.name}, Hong Kong`;
+  const transit = `https://www.google.com/maps/dir/?api=1&travelmode=transit&destination=${encodeURIComponent(destination)}`;
   return (
     <View style={[styles.card, styles.planCard]}>
       <Text style={styles.kicker}>GO · {plan.date}</Text>
       <Text style={styles.title}>{p.name}</Text>
       <Text style={styles.meta}>
-        {p.length_km} km · {p.hours} h official · {stars(p.stars)}
+        {p.length_km} km · {p.hours} h official{p.stars ? ` · ${stars(p.stars)}` : ''}
       </Text>
       <Text style={styles.body}>{plan.why_this}</Text>
       <View style={styles.timeline}>

@@ -41,7 +41,7 @@ Before calling a task done, run the relevant checks: `uv run pytest` for backend
 - **The wire protocol is the contract between backend and app.** Any change to an event or schema must update both `backend/app/schemas.py` / the harness events and `mobile/src/lib/types.ts` + the reducer in `mobile/src/lib/agent.tsx`.
 - **History is append-only and replayed natively.** Assistant turns keep the raw provider output in `Message.native[provider_key]`, and adapters replay it verbatim: Anthropic thinking blocks / signatures, Responses reasoning items (`store=False` + `include=["reasoning.encrypted_content"]`). Never edit or strip earlier turns. Drop a `tool_use` from history only when the turn was cut off (refusal / max_tokens) and the call won't run.
 - **Tool arguments are validated with `jsonschema`** before a handler runs. Failures return `INVALID_ARGUMENTS` to the model and don't raise.
-- **Every live feed goes through `cache.fetch_json`,** which falls back to `data/snapshots/<key>.json`, so the demo still works offline. Keep the snapshots committed.
+- **Every live feed goes through `cache.fetch_json`.** Live fetches are saved to the gitignored `data/snapshots/.live/`. On failure it falls back to that copy, then to the committed seed `data/snapshots/<key>.json`, so the demo still works offline. Keep the seeds committed (e.g. `hko_SRS_json_<year>.json` for every year the demo can plan into).
 - **Demo scenarios** (`session.scenario`: `clear`, `t8`, `rainstorm`, `thunderstorm`, `closure:<id>`) override only the weather/closure tools, and their results are labelled as overrides.
 
 ## Adding things
@@ -69,7 +69,7 @@ Before calling a task done, run the relevant checks: `uv run pytest` for backend
 - **HKO feeds:**
   - `fnd` starts tomorrow; today uses `flw`.
   - Warnings (`warnsum`) are "now" only.
-  - Sunrise/sunset comes from `opendata.php?dataType=SRS&rformat=json`.
+  - Sunrise/sunset comes from `opendata.php?dataType=SRS&rformat=json&year=YYYY`, one whole-year table per fetch.
   - Dates beyond 9 days return a non-error "no forecast yet".
   - The Very Hot Weather Warning is reported but isn't an automatic no-go (hike-safety decides EXTREME_HEAT).
 - **iOS 27 SDK requires the UIScene life cycle.** Expo 57's template doesn't adopt it, so `mobile/plugins/withSceneLifecycle.js` patches the generated AppDelegate + Info.plist to use Expo's `ExpoAppSceneDelegate` (mirrors the SDK 58 template). Remove the plugin when upgrading to SDK 58.

@@ -32,6 +32,13 @@ def to_responses_input(messages: list[Message], key: str = "openai_responses") -
     return items
 
 
+def _without_calls(output: list[dict]) -> list[dict]:
+    """Drop function_call items, and any reasoning item left without a following item
+    (the API rejects a replayed reasoning item that isn't followed by its output)."""
+    kept = [o for o in output if o.get("type") != "function_call"]
+    return [o for i, o in enumerate(kept) if o.get("type") != "reasoning" or (i + 1 < len(kept) and kept[i + 1].get("type") != "reasoning")]
+
+
 def to_responses_tools(tools: list[ToolSpec]) -> list[dict]:
     return [{"type": "function", "name": t.name, "description": t.description, "parameters": t.parameters, "strict": False} for t in tools]
 
@@ -110,7 +117,7 @@ class OpenAIResponsesProvider:
             stop = "tool_use" if calls else "end"
         if stop != "tool_use" and calls:
             calls = []
-            output = [o for o in output if o.get("type") != "function_call"]
+            output = _without_calls(output)
         usage = {}
         if response.usage:
             usage = {"input_tokens": response.usage.input_tokens, "output_tokens": response.usage.output_tokens}

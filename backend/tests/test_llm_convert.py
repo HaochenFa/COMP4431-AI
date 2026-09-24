@@ -1,7 +1,9 @@
-from app.llm.anthropic_messages import _sanitize_native, to_anthropic_messages
-from app.llm.base import Message, ToolCall, ToolResult
+from types import SimpleNamespace
+
+from app.llm.anthropic_messages import AnthropicProvider, _sanitize_native, to_anthropic_messages
+from app.llm.base import Completion, Message, TextDelta, TextReset, ToolCall, ToolResult
 from app.llm.openai_chat import to_chat_messages
-from app.llm.openai_responses import to_responses_input
+from app.llm.openai_responses import _without_calls, to_responses_input
 
 CALL = ToolCall("call_1", "get_weather", {"date": "2026-09-26"})
 HISTORY = [
@@ -53,3 +55,71 @@ def test_responses_shape_and_native_replay():
               {"type": "function_call", "call_id": "call_1", "name": "get_weather", "arguments": "{}"}]
     hist = [HISTORY[0], Message("assistant", tool_calls=[CALL], native={"openai_responses": native}), HISTORY[2]]
     assert to_responses_input(hist)[1:3] == native
+
+
+def test_responses_drops_reasoning_orphaned_by_removed_calls():
+    output = [{"type": "reasoning", "id": "rs_1"}, {"type": "message", "content": []},
+              {"type": "reasoning", "id": "rs_2"}, {"type": "function_call", "call_id": "c"}]
+    assert _without_calls(output) == output[:2]
+
+
+class _Block(dict):
+    def __getattr__(self, k):
+        return self[k]
+
+    def model_dump(self, **_):
+        return dict(self)
+
+
+class _FakeStream:
+    def __init__(self, texts, content, stop="end_turn", fail=False):
+        self.texts, self.fail = texts, fail
+        self.final = SimpleNamespace(content=[_Block(b) for b in content], stop_reason=stop,
+                                     usage=SimpleNamespace(input_tokens=1, output_tokens=1))
+
+    async def __aenter__(self):
+        return self
+
+    async def __aexit__(self, *exc):
+        return False
+
+    async def __aiter__(self):
+        for t in self.texts:
+            yield SimpleNamespace(type="text", text=t)
+        if self.fail:
+            raise ValueError("unparseable tool input")
+
+    async def get_final_message(self):
+        return self.final
+
+
+def _anthropic(*streams):
+    p = AnthropicProvider("claude-opus-5", api_key="test", fallbacks=None)
+    queue = list(streams)
+    p.client = SimpleNamespace(beta=SimpleNamespace(messages=SimpleNamespace(stream=lambda **kw: queue.pop(0))))
+    return p
+
+
+async def _collect(provider):
+    return [ev async for ev in provider.stream("sys", [Message("user", text="hi")], [])]
+
+
+async def test_anthropic_runs_only_calls_that_survive_the_fallback_echo_rules():
+    content = [{"type": "text", "text": "Let me check. "}, {"type": "tool_use", "id": "old", "name": "get_weather", "input": {"da": 1}},
+               {"type": "fallback", "from": {"model": "a"}, "to": {"model": "b"}},
+               {"type": "tool_use", "id": "new", "name": "get_weather", "input": {"date": "2026-11-18"}}]
+    done = (await _collect(_anthropic(_FakeStream(["Let me check. "], content, stop="tool_use"))))[-1]
+    assert [c.id for c in done.message.tool_calls] == ["new"]
+    assert [b["type"] for b in done.message.native["anthropic"]] == ["text", "tool_use"]
+
+
+async def test_anthropic_retry_resets_streamed_text_instead_of_duplicating_it():
+    evs = await _collect(_anthropic(_FakeStream(["Checking"], [], fail=True), _FakeStream(["Checking now."], [{"type": "text", "text": "Checking now."}])))
+    assert [type(e).__name__ for e in evs] == ["TextDelta", "TextReset", "TextDelta", "Completion"]
+    assert isinstance(evs[1], TextReset) and isinstance(evs[2], TextDelta) and isinstance(evs[-1], Completion)
+    assert evs[-1].message.text == "Checking now."
+
+
+async def test_anthropic_refusal_before_output_gives_an_empty_message():
+    done = (await _collect(_anthropic(_FakeStream([], [], stop="refusal"))))[-1]
+    assert done.stop == "refusal" and not done.message.text and not done.message.tool_calls

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import re
 from datetime import date, datetime
 from functools import lru_cache
 from typing import Any
@@ -25,15 +26,27 @@ def trails() -> dict[str, dict[str, Any]]:
     return {t["id"]: t for t in json.loads((DATA / "trails.json").read_text())}
 
 
+_TRKPT = re.compile(r'<trkpt\s+lat="([-\d.]+)"\s+lon="([-\d.]+)"')
+
+
 @lru_cache
-def geometries() -> dict[str, list[list[float]]]:
-    """trail_id -> [[lat, lng], ...] (MultiLineStrings concatenated)."""
+def geometries() -> dict[str, list[list[list[float]]]]:
+    """trail_id -> segments, each [[lat, lng], ...].
+
+    The official GPX track (one ordered segment, start -> finish) where there is one; otherwise the
+    AFCD layer's parts as separate segments, since joining a MultiLineString draws lines across gaps.
+    """
     gj = json.loads((DATA / "trails_raw.geojson").read_text())
-    out: dict[str, list[list[float]]] = {}
+    out: dict[str, list[list[list[float]]]] = {}
     for f in gj["features"]:
+        tid = f["properties"]["trail_id"]
+        gpx = DATA / "gpx" / f"{tid}.gpx"
+        if gpx.exists() and (pts := _TRKPT.findall(gpx.read_text())):
+            out[tid] = [[[round(float(lat), 6), round(float(lng), 6)] for lat, lng in pts]]
+            continue
         g = f["geometry"]
         lines = [g["coordinates"]] if g["type"] == "LineString" else g["coordinates"]
-        out[f["properties"]["trail_id"]] = [[round(lat, 6), round(lng, 6)] for line in lines for lng, lat, *_ in line]
+        out[tid] = [[[round(lat, 6), round(lng, 6)] for lng, lat, *_ in line] for line in lines if line]
     return out
 
 

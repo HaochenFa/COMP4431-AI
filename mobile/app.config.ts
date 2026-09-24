@@ -36,6 +36,7 @@ const config: ExpoConfig = {
         speechRecognitionPermission: 'Allow Trailhead to turn your speech into text.',
       },
     ],
+    './plugins/withSceneLifecycle',
   ],
   extra: { hasGoogleMaps: googleMapsKey.length > 0 },
   experiments: { typedRoutes: true, reactCompiler: true },

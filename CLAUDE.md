@@ -72,6 +72,7 @@ Before calling a task done, run the relevant checks: `uv run pytest` for backend
   - Sunrise/sunset comes from `opendata.php?dataType=SRS&rformat=json`.
   - Dates beyond 9 days return a non-error "no forecast yet".
   - The Very Hot Weather Warning is reported but isn't an automatic no-go (hike-safety decides EXTREME_HEAT).
+- **iOS 27 SDK requires the UIScene life cycle.** Expo 57's template doesn't adopt it, so `mobile/plugins/withSceneLifecycle.js` patches the generated AppDelegate + Info.plist to use Expo's `ExpoAppSceneDelegate` (mirrors the SDK 58 template). Remove the plugin when upgrading to SDK 58.
 - **Local HTTP clients here go through a SOCKS proxy.** Use `websockets.connect(..., proxy=None)` in scripts that call localhost.
 - **Secrets:** `backend/.env` holds the LLM keys and `mobile/.env` holds `GOOGLE_MAPS_IOS_KEY`. Both are gitignored; never commit keys. Model IDs for the OpenAI profiles in `config.yaml` are unverified.
 

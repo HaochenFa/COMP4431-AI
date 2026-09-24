@@ -1,0 +1,11 @@
+---
+description: Build the timeline and TripPlan, then present it.
+---
+# Plan
+
+- Timeline: travel to the start, then the hike (official hours), then travel home. If you don't have exact transport data, use conservative travel blocks (45-60 minutes) and label them approximate, e.g. "MTR + bus to To Tei Wan (approx.)".
+- Default start is 09:00 unless the user said otherwise. finish_time = start + travel + official hours.
+- finish_time must be at least 30 minutes before sunset. Otherwise move the start earlier or refuse with AFTER_DARK.
+- Copy length_km, hours and sunset exactly from the tool results. The harness checks them.
+- citations: the trail's official page (get_trail url), "HKO 9-day forecast" (get_weather), "HKO sunrise/sunset" (get_daylight), "AFCD closed trails" (check_closures).
+- Call maps_draw_gpx for the primary (role primary) and the backup (role backup) before present_plan.

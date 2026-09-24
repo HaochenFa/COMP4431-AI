@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<gpx xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+     xsi:schemaLocation="http://www.topografix.com/GPX/1/1 http://www.topografix.com/GPX/1/1/gpx.xsd"
+     version="1.1" creator="json3d_batch_to_gpx"
+     xmlns="http://www.topografix.com/GPX/1/1">
+  <metadata>
+    <name>LaiChiChongGeosite</name>
+  </metadata>
+  <trk>
+    <name>LaiChiChongGeosite</name>
+    <type>hike</type>
+    <trkseg>
+      <trkpt lat="22.4564681160" lon="114.2995850081"><ele>4.000</ele></trkpt>
+      <trkpt lat="22.4565975909" lon="114.2994825034"><ele>4.000</ele></trkpt>
+      <trkpt lat="22.4565855215" lon="114.2992886282"><ele>4.000</ele></trkpt>
+      <trkpt lat="22.4565838115" lon="114.2992611610"><ele>4.000</ele></trkpt>
+      <trkpt lat="22.4565769207" lon="114.2991523650"><ele>6.000</ele></trkpt>
+      <trkpt lat="22.4565997202" lon="114.2989741953"><ele>6.000</ele></trkpt>
+      <trkpt lat="22.4565631763" lon="114.2988841300"><ele>4.000</ele></trkpt>
+      <trkpt lat="22.4564644015" lon="114.2987214546"><ele>11.000</ele></trkpt>
+      <trkpt lat="22.4564082038" lon="114.2986289012"><ele>8.000</ele></trkpt>
+      <trkpt lat="22.4563018184" lon="114.2984718791"><ele>6.000</ele></trkpt>
+      <trkpt lat="22.4562479873" lon="114.2983924260"><ele>5.000</ele></trkpt>
+      <trkpt lat="22.4562149410" lon="114.2982873586"><ele>5.000</ele></trkpt>
+      <trkpt lat="22.4561269258" lon="114.2981176841"><ele>6.000</ele></trkpt>
+      <trkpt lat="22.4561244139" lon="114.2981128419"><ele>6.000</ele></trkpt>
+      <trkpt lat="22.4561211949" lon="114.2979185639"><ele>4.000</ele></trkpt>
+      <trkpt lat="22.4561194102" lon="114.2978108533"><ele>6.000</ele></trkpt>
+      <trkpt lat="22.4561499018" lon="114.2976193336"><ele>6.000</ele></trkpt>
+      <trkpt lat="22.4561719606" lon="114.2974807796"><ele>4.000</ele></trkpt>
+      <trkpt lat="22.4561448980" lon="114.2972886645"><ele>4.000</ele></trkpt>
+      <trkpt lat="22.4561367660" lon="114.2972309369"><ele>4.000</ele></trkpt>
+      <trkpt lat="22.4560804871" lon="114.2970848807"><ele>4.000</ele></trkpt>
+      <trkpt lat="22.4560155844" lon="114.2969686359"><ele>7.000</ele></trkpt>
+      <trkpt lat="22.4559162804" lon="114.2968472201"><ele>6.000</ele></trkpt>
+      <trkpt lat="22.4558482419" lon="114.2966672267"><ele>4.000</ele></trkpt>
+      <trkpt lat="22.4557802032" lon="114.2964872335"><ele>6.000</ele></trkpt>
+      <trkpt lat="22.4557732025" lon="114.2964687134"><ele>6.000</ele></trkpt>
+      <trkpt lat="22.4557589520" lon="114.2963535414"><ele>5.000</ele></trkpt>
+      <trkpt lat="22.4557775654" lon="114.2961602677"><ele>8.000</ele></trkpt>
+      <trkpt lat="22.4557801413" lon="114.2961335208"><ele>8.000</ele></trkpt>
+      <trkpt lat="22.4558167205" lon="114.2959432393"><ele>7.000</ele></trkpt>
+      <trkpt lat="22.4558329083" lon="114.2958590313"><ele>8.000</ele></trkpt>
+      <trkpt lat="22.4558391259" lon="114.2956648381"><ele>4.000</ele></trkpt>
+      <trkpt lat="22.4558397556" lon="114.2956451676"><ele>4.000</ele></trkpt>
+      <trkpt lat="22.4558456049" lon="114.2954888835"><ele>6.000</ele></trkpt>
+      <trkpt lat="22.4558847588" lon="114.2952991959"><ele>9.000</ele></trkpt>
+      <trkpt lat="22.4559175453" lon="114.2951403550"><ele>14.000</ele></trkpt>
+    </trkseg>
+  </trk>
+</gpx>

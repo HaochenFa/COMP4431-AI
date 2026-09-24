@@ -1,0 +1,44 @@
+# LLM profiles. Pick one with LLM_PROFILE=<name> (env or backend/.env); falls back to default_profile.
+# provider: anthropic | openai_chat | openai_responses
+# openai_chat + base_url covers any OpenAI-compatible server (DeepSeek, OpenRouter, Ollama, vLLM...).
+
+default_profile: claude
+
+profiles:
+  claude:
+    provider: anthropic
+    model: claude-opus-5
+    api_key_env: ANTHROPIC_API_KEY
+    # effort: medium          # low | medium | high | xhigh | max (unset = API default "high")
+    fallbacks: default        # server-side retry on another model if a request is declined; set null to disable
+
+  claude-sonnet:
+    provider: anthropic
+    model: claude-sonnet-5
+    api_key_env: ANTHROPIC_API_KEY
+    fallbacks: null
+
+  gpt-responses:
+    provider: openai_responses
+    model: gpt-5
+    api_key_env: OPENAI_API_KEY
+    # reasoning_effort: medium
+
+  gpt-chat:
+    provider: openai_chat
+    model: gpt-5
+    api_key_env: OPENAI_API_KEY
+
+  ollama:
+    provider: openai_chat
+    model: qwen3:14b
+    base_url: http://localhost:11434/v1
+    api_key_env: OLLAMA_API_KEY   # any non-empty value; Ollama ignores it
+    max_tokens_param: max_tokens
+
+  openrouter:
+    provider: openai_chat
+    model: deepseek/deepseek-chat
+    base_url: https://openrouter.ai/api/v1
+    api_key_env: OPENROUTER_API_KEY
+    max_tokens_param: max_tokens

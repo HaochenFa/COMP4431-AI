@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<gpx xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+     xsi:schemaLocation="http://www.topografix.com/GPX/1/1 http://www.topografix.com/GPX/1/1/gpx.xsd"
+     version="1.1" creator="json3d_batch_to_gpx"
+     xmlns="http://www.topografix.com/GPX/1/1">
+  <metadata>
+    <name>WongShekTreeWalk</name>
+  </metadata>
+  <trk>
+    <name>WongShekTreeWalk</name>
+    <type>hike</type>
+    <trkseg>
+      <trkpt lat="22.4366625555" lon="114.3339278408"><ele>22.000</ele></trkpt>
+      <trkpt lat="22.4366631682" lon="114.3341221212"><ele>36.000</ele></trkpt>
+      <trkpt lat="22.4366633421" lon="114.3341772701"><ele>36.000</ele></trkpt>
+      <trkpt lat="22.4366657457" lon="114.3343053627"><ele>40.000</ele></trkpt>
+      <trkpt lat="22.4366549332" lon="114.3343363578"><ele>40.000</ele></trkpt>
+      <trkpt lat="22.4366329933" lon="114.3343691666"><ele>40.000</ele></trkpt>
+      <trkpt lat="22.4365327517" lon="114.3345025636"><ele>38.000</ele></trkpt>
+      <trkpt lat="22.4364944400" lon="114.3345534123"><ele>40.000</ele></trkpt>
+      <trkpt lat="22.4364168316" lon="114.3346559246"><ele>42.000</ele></trkpt>
+      <trkpt lat="22.4363222369" lon="114.3347953405"><ele>50.000</ele></trkpt>
+      <trkpt lat="22.4362501189" lon="114.3348978004"><ele>48.000</ele></trkpt>
+      <trkpt lat="22.4362028172" lon="114.3349717679"><ele>53.000</ele></trkpt>
+      <trkpt lat="22.4361910841" lon="114.3349929118"><ele>53.000</ele></trkpt>
+      <trkpt lat="22.4361779395" lon="114.3350075068"><ele>53.000</ele></trkpt>
+      <trkpt lat="22.4361596456" lon="114.3350241165"><ele>56.000</ele></trkpt>
+      <trkpt lat="22.4360369830" lon="114.3351276845"><ele>54.000</ele></trkpt>
+      <trkpt lat="22.4358936780" lon="114.3352459291"><ele>54.000</ele></trkpt>
+      <trkpt lat="22.4358119610" lon="114.3353133556"><ele>58.000</ele></trkpt>
+      <trkpt lat="22.4356485471" lon="114.3353960893"><ele>60.000</ele></trkpt>
+      <trkpt lat="22.4356362767" lon="114.3354023016"><ele>60.000</ele></trkpt>
+      <trkpt lat="22.4355258681" lon="114.3354324158"><ele>60.000</ele></trkpt>
+      <trkpt lat="22.4354580329" lon="114.3354492508"><ele>60.000</ele></trkpt>
+      <trkpt lat="22.4354083425" lon="114.3354542359"><ele>60.000</ele></trkpt>
+      <trkpt lat="22.4353418131" lon="114.3354380447"><ele>58.000</ele></trkpt>
+      <trkpt lat="22.4352661839" lon="114.3354097397"><ele>58.000</ele></trkpt>
+      <trkpt lat="22.4351850115" lon="114.3353614176"><ele>56.000</ele></trkpt>
+      <trkpt lat="22.4351353628" lon="114.3353331518"><ele>56.000</ele></trkpt>
+      <trkpt lat="22.4351100674" lon="114.3353250605"><ele>56.000</ele></trkpt>
+      <trkpt lat="22.4350828829" lon="114.3353280506"><ele>56.000</ele></trkpt>
+      <trkpt lat="22.4350421772" lon="114.3353336094"><ele>56.000</ele></trkpt>
+      <trkpt lat="22.4350579950" lon="114.3353740472"><ele>54.000</ele></trkpt>
+      <trkpt lat="22.4350537741" lon="114.3354145302"><ele>54.000</ele></trkpt>
+      <trkpt lat="22.4350412053" lon="114.3354313890"><ele>54.000</ele></trkpt>
+      <trkpt lat="22.4350108465" lon="114.3354482180"><ele>54.000</ele></trkpt>
+      <trkpt lat="22.4349386051" lon="114.3354920041"><ele>54.000</ele></trkpt>
+      <trkpt lat="22.4349040607" lon="114.3355133258"><ele>52.000</ele></trkpt>
+      <trkpt lat="22.4348736842" lon="114.3355481547"><ele>50.000</ele></trkpt>
+      <trkpt lat="22.4347882059" lon="114.3356728720"><ele>53.000</ele></trkpt>
+      <trkpt lat="22.4347000778" lon="114.3358288845"><ele>46.000</ele></trkpt>
+      <trkpt lat="22.4346521546" lon="114.3358916402"><ele>40.000</ele></trkpt>
+      <trkpt lat="22.4345799066" lon="114.3359511626"><ele>39.000</ele></trkpt>
+      <trkpt lat="22.4344273071" lon="114.3360550814"><ele>43.000</ele></trkpt>
+      <trkpt lat="22.4344172224" lon="114.3360619489"><ele>43.000</ele></trkpt>
+    </trkseg>
+  </trk>
+</gpx>

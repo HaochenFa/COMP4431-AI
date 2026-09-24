@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<gpx xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+     xsi:schemaLocation="http://www.topografix.com/GPX/1/1 http://www.topografix.com/GPX/1/1/gpx.xsd"
+     version="1.1" creator="json3d_batch_to_gpx"
+     xmlns="http://www.topografix.com/GPX/1/1">
+  <metadata>
+    <name>NgongPingTreeWalk</name>
+  </metadata>
+  <trk>
+    <name>NgongPingTreeWalk</name>
+    <type>hike</type>
+    <trkseg>
+      <trkpt lat="22.2550880569" lon="113.9137284935"><ele>461.000</ele></trkpt>
+      <trkpt lat="22.2550330468" lon="113.9136876338"><ele>466.000</ele></trkpt>
+      <trkpt lat="22.2550124245" lon="113.9136764779"><ele>466.000</ele></trkpt>
+      <trkpt lat="22.2549798750" lon="113.9136655198"><ele>468.000</ele></trkpt>
+      <trkpt lat="22.2549047911" lon="113.9136276983"><ele>466.000</ele></trkpt>
+      <trkpt lat="22.2547305268" lon="113.9135767119"><ele>465.000</ele></trkpt>
+      <trkpt lat="22.2547108186" lon="113.9135709457"><ele>464.000</ele></trkpt>
+      <trkpt lat="22.2546473362" lon="113.9135636922"><ele>462.000</ele></trkpt>
+      <trkpt lat="22.2544715780" lon="113.9135190144"><ele>464.000</ele></trkpt>
+      <trkpt lat="22.2544242419" lon="113.9135069816"><ele>464.000</ele></trkpt>
+      <trkpt lat="22.2543538691" lon="113.9134813142"><ele>460.000</ele></trkpt>
+      <trkpt lat="22.2542646111" lon="113.9134464669"><ele>462.000</ele></trkpt>
+      <trkpt lat="22.2541736561" lon="113.9134226804"><ele>462.000</ele></trkpt>
+      <trkpt lat="22.2540810041" lon="113.9134099538"><ele>462.000</ele></trkpt>
+      <trkpt lat="22.2540294943" lon="113.9134003468"><ele>462.000</ele></trkpt>
+      <trkpt lat="22.2538964302" lon="113.9133563138"><ele>462.000</ele></trkpt>
+      <trkpt lat="22.2538166497" lon="113.9132980366"><ele>462.000</ele></trkpt>
+      <trkpt lat="22.2537515916" lon="113.9132446281"><ele>462.000</ele></trkpt>
+      <trkpt lat="22.2537204266" lon="113.9131987039"><ele>464.000</ele></trkpt>
+      <trkpt lat="22.2536441012" lon="113.9130937288"><ele>463.000</ele></trkpt>
+      <trkpt lat="22.2535495114" lon="113.9129284391"><ele>463.000</ele></trkpt>
+      <trkpt lat="22.2534882343" lon="113.9128213615"><ele>464.000</ele></trkpt>
+      <trkpt lat="22.2533896653" lon="113.9126587774"><ele>464.000</ele></trkpt>
+      <trkpt lat="22.2533472853" lon="113.9125888742"><ele>463.000</ele></trkpt>
+      <trkpt lat="22.2533140910" lon="113.9125402164"><ele>464.000</ele></trkpt>
+      <trkpt lat="22.2532661892" lon="113.9125047509"><ele>463.000</ele></trkpt>
+      <trkpt lat="22.2532158760" lon="113.9124969387"><ele>462.000</ele></trkpt>
+      <trkpt lat="22.2530358828" lon="113.9125129811"><ele>458.000</ele></trkpt>
+      <trkpt lat="22.2528794176" lon="113.9125269264"><ele>462.000</ele></trkpt>
+      <trkpt lat="22.2528191799" lon="113.9125024467"><ele>462.000</ele></trkpt>
+      <trkpt lat="22.2527757735" lon="113.9124725637"><ele>462.000</ele></trkpt>
+      <trkpt lat="22.2527310744" lon="113.9124118351"><ele>462.000</ele></trkpt>
+      <trkpt lat="22.2526932397" lon="113.9123529359"><ele>460.000</ele></trkpt>
+      <trkpt lat="22.2526783729" lon="113.9123003683"><ele>460.000</ele></trkpt>
+    </trkseg>
+  </trk>
+</gpx>

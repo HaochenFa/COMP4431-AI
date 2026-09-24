@@ -11,34 +11,16 @@ import pytest
 from app import cache
 from app.agent.harness import Agent
 from app.agent.session import Session
-from app.llm.base import Completion, Message, TextDelta, ToolCall
+from app.llm.base import Completion, Message, ToolCall
 from app.paths import SNAPSHOTS
 from app.tools import data
 from app.tools.base import ToolOutput, obj
 
+from .fakes import ScriptedProvider
+
 DAY = (data.today_hk() + timedelta(days=2)).isoformat()
 LATER = (data.today_hk() + timedelta(days=4)).isoformat()  # beyond the reach of live warnings
 REAL_HKO = data.hko
-
-
-class ScriptedProvider:
-    """Returns pre-written assistant turns in order; records what it was sent."""
-
-    key = "fake"
-    model = "fake-1"
-
-    def __init__(self, turns: list[list[ToolCall] | str]):
-        self.turns = list(turns)
-        self.seen: list[list[Message]] = []
-
-    async def stream(self, system, messages, tools):
-        self.seen.append(list(messages))
-        turn = self.turns.pop(0)
-        if isinstance(turn, str):
-            yield TextDelta(turn)
-            yield Completion(Message("assistant", text=turn), stop="end")
-        else:
-            yield Completion(Message("assistant", tool_calls=turn), stop="tool_use")
 
 
 @pytest.fixture(autouse=True)
@@ -155,6 +137,14 @@ async def test_invalid_arguments_are_returned_to_model():
     provider = ScriptedProvider([[ToolCall("c1", "get_weather", {"when": "saturday"})], "Let me fix that."])
     await run(Agent(provider), Session("s"), {"type": "user_message", "text": "weather"})
     assert "INVALID_ARGUMENTS" in provider.seen[1][-1].tool_results[0].content
+
+
+async def test_invalid_arguments_list_every_problem_with_its_path():
+    bad = {"cards": [{"id": "date", "title": "Date", "options": ["Today", "Tomorrow"]}]}
+    provider = ScriptedProvider([[ToolCall("a1", "ask_user", bad)], "ok"])
+    await run(Agent(provider), Session("s"), {"type": "user_message", "text": "hike"})
+    msg = results_of(provider, 1)["a1"].content
+    assert "cards[0]: 'type' is a required property" in msg and "cards[0]: 'prompt' is a required property" in msg
 
 
 CHECKS = [ToolCall("k1", "check_closures", {"ids": ["hk_8"]}), ToolCall("k2", "get_weather", {"date": DAY}),
@@ -309,6 +299,7 @@ async def test_plan_card_carries_official_name_and_start():
     t = data.trails()["hk_8"]
     assert card["primary"]["name"] == t["name"] and card["primary"]["start"] == t["start"]
     assert card["primary"]["start_coord"] == data.geometries()["hk_8"][0][0]
+    assert card["primary"]["profile"]["ascent_m"] == data.profiles()["hk_8"]["ascent_m"]
 
 
 async def test_map_keeps_multipart_tracks_as_separate_segments():
@@ -337,3 +328,117 @@ async def test_daylight_works_offline_from_the_committed_yearly_snapshot(monkeyp
     await run(Agent(provider), Session("s"), {"type": "user_message", "text": "sunset?"})
     result = results_of(provider, 1)["d1"]
     assert not result.is_error and '"sunset": "17:39"' in result.content and '"stale": true' in result.content
+
+
+def test_elevation_profiles_come_from_the_official_gpx():
+    prof = data.profiles()
+    hk8 = prof["hk_8"]
+    assert hk8["d_km"][0] == 0 and all(b >= a for a, b in zip(hk8["d_km"], hk8["d_km"][1:]))
+    assert len(hk8["d_km"]) == len(hk8["ele_m"]) <= 130
+    assert 250 < hk8["ascent_m"] < 400 and hk8["max_m"] == 284  # Dragon's Back ridge, hysteresis-smoothed
+    assert "cty_1" not in prof and "oth_20" not in prof  # GPX without heights; no GPX at all
+
+
+async def test_trail_tools_carry_elevation():
+    provider = ScriptedProvider([
+        [ToolCall("s1", "search_trails", {"region": "Hong Kong Island", "max_ascent_m": 300, "limit": 25}),
+         ToolCall("g1", "get_trail", {"id": "hk_8"}), ToolCall("m1", "maps_draw_gpx", {"id": "hk_8"})],
+        "ok",
+    ])
+    events = await run(Agent(provider), Session("s"), {"type": "user_message", "text": "flat walk"})
+    res = results_of(provider, 1)
+    found = {t["id"]: t for t in json.loads(res["s1"].content)["trails"]}
+    assert "hk_8" not in found and all(t["ascent_m"] is None or t["ascent_m"] <= 300 for t in found.values())
+    assert "cty_1" in found and found["cty_1"]["ascent_m"] is None  # unknown heights are kept, not dropped
+    assert json.loads(res["g1"].content)["elevation"]["ascent_m"] == data.profiles()["hk_8"]["ascent_m"]
+    payload = next(e["payload"] for e in events if e["type"] == "map")
+    assert payload["profile"]["ele_m"] == data.profiles()["hk_8"]["ele_m"]
+
+
+async def test_unusable_turns_are_retried_with_a_note():
+    class Recording(ScriptedProvider):
+        async def stream(self, system, messages, tools):
+            self.systems = getattr(self, "systems", []) + [system]
+            async for ev in super().stream(system, messages, tools):
+                yield ev
+
+    provider = Recording(["", "present_plan\n2026-09-26: Dragon's Back", "Here you go."])
+    session = Session("s")
+    events = await run(Agent(provider), session, {"type": "user_message", "text": "hi"})
+    assert len(provider.seen) == 3 and all(len(m) == 1 for m in provider.seen)  # nothing appended between tries
+    assert "Harness note" not in provider.systems[0] and "was empty" in provider.systems[1]
+    assert "typed `present_plan` as text" in provider.systems[2]
+    assert [e["type"] for e in events if e["type"] != "assistant_delta"] == ["assistant_reset", "assistant_done"]
+    assert [m.text for m in session.messages if m.role == "assistant"] == ["Here you go."]
+
+
+async def test_unknown_trail_ids_are_not_reported_open():
+    provider = ScriptedProvider([[ToolCall("c1", "check_closures", {"ids": ["NAMCHUNG"]})], "ok"])
+    session = Session("s")
+    await run(Agent(provider), session, {"type": "user_message", "text": "Nam Chung?"})
+    result = results_of(provider, 1)["c1"]
+    assert result.is_error and "Unknown trail ids" in result.content and not session.ledger.closures_checked
+
+
+def _unit(i: int, n: int = 4) -> list[float]:
+    return [1.0 if j == i else 0.0 for j in range(n)]
+
+
+async def test_search_knowledge_ranks_only_the_filtered_trails(monkeypatch):
+    chunks = [{"trail_id": "hk_8", "text": "龍脊海景", "vec": _unit(0)}, {"trail_id": "cty_7", "text": "大灘海岸", "vec": [0.9, 0.1, 0, 0]},
+              {"trail_id": "oth_24", "text": "戰時遺跡", "vec": _unit(1)}]
+    monkeypatch.setattr(data, "knowledge", lambda: chunks)
+
+    async def embed(text):
+        return _unit(0) if "sea" in text else _unit(1)
+
+    monkeypatch.setattr(data, "embed_query", embed)
+    provider = ScriptedProvider([[
+        ToolCall("k1", "search_knowledge", {"query": "sea views"}),
+        ToolCall("k2", "search_knowledge", {"query": "sea views", "trail_ids": ["cty_7", "oth_24"], "k": 1}),
+        ToolCall("k3", "search_knowledge", {"query": "x", "trail_ids": ["nope"]}),
+    ], "ok"])
+    await run(Agent(provider), Session("s"), {"type": "user_message", "text": "sea"})
+    res = results_of(provider, 1)
+    assert [p["trail_id"] for p in json.loads(res["k1"].content)["passages"]] == ["hk_8", "cty_7", "oth_24"]
+    only = json.loads(res["k2"].content)["passages"]
+    assert [p["trail_id"] for p in only] == ["cty_7"] and only[0]["url"] == data.trails()["cty_7"]["url"]
+    assert res["k3"].is_error and "Unknown trail ids" in res["k3"].content
+
+
+async def test_search_knowledge_degrades_when_the_embedder_is_down(monkeypatch):
+    async def down(text):
+        raise ConnectionError("refused")
+
+    monkeypatch.setattr(data, "embed_query", down)
+    provider = ScriptedProvider([[ToolCall("k1", "search_knowledge", {"query": "waterfall"})], "ok"])
+    await run(Agent(provider), Session("s"), {"type": "user_message", "text": "waterfall"})
+    result = results_of(provider, 1)["k1"]
+    assert result.is_error and "get_trail" in result.content
+
+
+def test_knowledge_index_covers_the_described_trails():
+    chunks = data.knowledge()
+    described = {t["id"] for t in data.trails().values() if t.get("description_zh")}
+    assert {c["trail_id"] for c in chunks} == described
+    assert all(len(c["vec"]) == len(chunks[0]["vec"]) for c in chunks) and "為方便市民" not in "".join(c["text"] for c in chunks)
+
+
+@pytest.mark.parametrize("scenario, over, problem", [
+    ("t8", {}, "no-go warning TC8NE"),
+    ("closure:hk_8", {}, "choose another trail, or refuse with code CLOSED"),
+    ("live", {"backup": {"id": "cty_2", "name": "x", "length_km": 5.5, "hours": 2.5, "stars": 3}}, "['cty_2'] closed"),
+])
+async def test_plans_on_no_go_days_or_closed_trails_are_blocked(scenario, over, problem):
+    ids = ["hk_8"] + ([over["backup"]["id"]] if "backup" in over else [])
+    provider = ScriptedProvider([
+        [ToolCall("k1", "check_closures", {"ids": ids}), *CHECKS[1:]],
+        [ToolCall("p1", "present_plan", plan_args(**over))],
+        "ok",
+    ])
+    agent, session = Agent(provider), Session("s")
+    await run(agent, session, {"type": "set_scenario", "scenario": scenario})
+    events = await run(agent, session, {"type": "user_message", "text": "plan"})
+    assert not any(e["type"] == "plan" for e in events)
+    result = results_of(provider, 2)["p1"].content
+    assert "UNSAFE_PLAN" in result and problem in result

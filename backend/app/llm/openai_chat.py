@@ -67,12 +67,13 @@ class OpenAIChatProvider:
         params: dict[str, Any] = {
             "model": self.model,
             "messages": to_chat_messages(system, messages),
-            "tools": to_chat_tools(tools),
             "stream": True,
             "stream_options": {"include_usage": True},  # final chunk carries usage (profiles can override via extra)
             self.max_tokens_param: self.max_tokens,
             **self.extra,
         }
+        if tools:  # some servers reject an empty list (the no-tools eval baseline sends none)
+            params["tools"] = to_chat_tools(tools)
         if self.reasoning_effort:
             params["reasoning_effort"] = self.reasoning_effort
 

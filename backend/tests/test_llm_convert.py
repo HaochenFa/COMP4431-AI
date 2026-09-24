@@ -1,3 +1,4 @@
+import json
 from types import SimpleNamespace
 
 from app.llm.anthropic_messages import AnthropicProvider, _sanitize_native, to_anthropic_messages
@@ -123,3 +124,28 @@ async def test_anthropic_retry_resets_streamed_text_instead_of_duplicating_it():
 async def test_anthropic_refusal_before_output_gives_an_empty_message():
     done = (await _collect(_anthropic(_FakeStream([], [], stop="refusal"))))[-1]
     assert done.stop == "refusal" and not done.message.text and not done.message.tool_calls
+
+
+def test_tool_schemas_are_flattened_for_every_model():
+    from pydantic import BaseModel
+
+    from app.agent.harness import build_toolbox
+    from app.tools.base import flatten_schema
+
+    class Inner(BaseModel):
+        title: str
+        n: int | None = None
+
+    class Outer(BaseModel):
+        a: Inner
+        b: Inner | None = None
+        c: list[Inner]
+
+    flat = flatten_schema(Outer.model_json_schema())
+    text = json.dumps(flat)
+    assert "$ref" not in text and "$defs" not in text and "anyOf" not in text
+    assert flat["properties"]["a"]["properties"]["title"] == {"type": "string"}  # a field named title is kept
+    assert flat["properties"]["b"]["type"] == ["object", "null"] and flat["properties"]["c"]["items"]["required"] == ["title"]
+    assert flat["properties"]["a"]["properties"]["n"]["type"] == ["integer", "null"]
+    for spec in build_toolbox().specs:
+        assert "$ref" not in json.dumps(spec.parameters), spec.name

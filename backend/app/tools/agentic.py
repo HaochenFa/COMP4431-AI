@@ -97,6 +97,23 @@ def number_check(plan: TripPlan, ctx: ToolContext) -> list[str]:
     return problems
 
 
+def safety_check(plan: TripPlan, ctx: ToolContext) -> list[str]:
+    """The hike-safety rules that need no judgement, enforced in code: a plan can't go ahead on a day with a
+    no-go warning, on a closed trail, or into a heavy-rain forecast. (Thunderstorm exposure, heat and ability
+    are judgement calls left to the model and the hike-safety skill.)"""
+    led, d = ctx.session.ledger, plan.date
+    problems = []
+    for code in led.no_go.get(d, []):
+        refusal = "WARNING_T8" if code.startswith("TC") else "RAINSTORM" if code.startswith("WRAIN") else "THUNDERSTORM"
+        problems.append(f"get_weather lists the no-go warning {code} for {d}: call refuse with code {refusal} instead")
+    ids = [plan.primary.id] + ([plan.backup.id] if plan.backup else [])
+    if closed := [t for t in ids if t in led.closed]:
+        problems.append(f"check_closures reported {closed} closed: choose another trail, or refuse with code CLOSED")
+    if re.search(r"heavy rain|rainstorm", led.forecast.get(d, ""), re.I):
+        problems.append(f"the HKO forecast for {d} says heavy rain: refuse with code RAINSTORM, or plan another date")
+    return problems
+
+
 def evidence_check(refusal: Refusal, ctx: ToolContext) -> list[str]:
     """The refusal code must be backed by what the tools actually returned."""
     led, code, d = ctx.session.ledger, refusal.code, refusal.date
@@ -158,7 +175,7 @@ def register(box: ToolBox) -> None:
     @box.register(
         "present_plan",
         "Show the final day plan card. Blocked unless check_closures (for every trail in it), get_weather and get_daylight "
-        "were called for this date, every figure (km, hours, stars, sunset) matches the tool results, finish_time is the end "
+        "were called for this date, no trail is closed, get_weather lists no no-go warning or heavy rain for the date, every figure (km, hours, stars, sunset) matches the tool results, finish_time is the end "
         "of a timeline hike step at least the official hours long, and it is 30+ minutes before sunset.",
         TripPlan,
     )
@@ -170,6 +187,8 @@ def register(box: ToolBox) -> None:
         ids = [plan.primary.id] + ([plan.backup.id] if plan.backup else [])
         if missing := gate(ctx, plan.date, ids, need_daylight=True):
             return _blocked(missing, "present_plan")
+        if problems := safety_check(plan, ctx):
+            return ToolOutput({"error": "UNSAFE_PLAN", "problems": problems}, summary="blocked: unsafe", is_error=True, blocked=True)
         if problems := number_check(plan, ctx):
             return ToolOutput({"error": "NUMBERS_DO_NOT_MATCH_TOOLS", "problems": problems}, summary="blocked: figures mismatch",
                               is_error=True, blocked=True)
@@ -177,7 +196,8 @@ def register(box: ToolBox) -> None:
         for key, pick in (("primary", plan.primary), ("backup", plan.backup)):
             if pick:  # names and the start point come from the dataset, not the model
                 t, segs = data.trails()[pick.id], data.geometries().get(pick.id)
-                card[key].update(name=t["name"], start=t["start"], start_coord=segs[0][0] if segs else None)
+                card[key].update(name=t["name"], start=t["start"], start_coord=segs[0][0] if segs else None,
+                                 profile=data.profiles().get(pick.id))
         await ctx.emit({"type": "plan", "plan": card})
         return ToolOutput("Plan card shown to the user. Add at most two short sentences; do not repeat the card.", summary=plan.primary.name)
 

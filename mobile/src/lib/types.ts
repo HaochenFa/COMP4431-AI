@@ -10,6 +10,18 @@ export type TrailPick = {
   // Added by the server from the dataset when the plan card is emitted.
   start?: string;
   start_coord?: LatLng | null;
+  profile?: ElevationProfile | null;
+};
+
+// From the official GPX (backend/app/tools/data.py profiles()); null when the GPX has no heights.
+export type ElevationProfile = {
+  d_km: number[];
+  ele_m: number[];
+  ascent_m: number;
+  descent_m: number;
+  max_m: number;
+  min_m: number;
+  source: string;
 };
 
 export type TripPlan = {
@@ -47,6 +59,7 @@ export type Track = {
   role: TrackRole;
   segments: LatLng[][]; // drawn separately: joining them would draw lines across gaps in the track
   markers: { kind: 'start' | 'finish'; label: string; coord: LatLng }[];
+  profile?: ElevationProfile | null;
 };
 
 export type ToolStatus = 'start' | 'ok' | 'error' | 'blocked' | 'waiting';

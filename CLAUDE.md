@@ -8,14 +8,15 @@ A Hong Kong hiking pre-trip planning agent: a Python backend (agent harness + to
 ## Layout
 
 ```
-backend/app/llm/      Provider-neutral types (base.py) + adapters: anthropic_messages, openai_chat, openai_responses; registry.py reads config.yaml
+backend/app/llm/      Provider-neutral types (base.py) + adapters: anthropic_messages, openai_chat, openai_responses; embeddings.py; registry.py reads config.yaml
 backend/app/agent/    harness.py (tool loop, ask_user pause/resume), session.py (history, gate ledger, scenario), prompts/system.md
-backend/app/tools/    hiking.py (trail/closure/weather/daylight/map tools), agentic.py (ask_user, load_skill, present_plan, refuse + gate), data.py (datasets, live feeds)
+backend/app/tools/    hiking.py (trail/knowledge/closure/weather/daylight/map tools), agentic.py (ask_user, load_skill, present_plan, refuse + gate), data.py (datasets, GPX profiles, knowledge index, live feeds)
 backend/app/skills/   Markdown SOPs loaded via load_skill; hike-safety.md is always injected into the system prompt
 backend/app/schemas.py  Wire contract (TripPlan, Refusal, QuestionCard); mirrored by mobile/src/lib/types.ts
+backend/eval/         cases.yaml (43 graded cases), run.py (runner + summary), baseline.py (no tools), driver.py (headless harness + persona), fixtures.py (frozen feeds), chat.py (terminal chat), trace.py
 mobile/src/app/       Expo Router screens (index = map + chat sheet, settings = modal)
 mobile/src/lib/       agent.tsx (WebSocket + reducer), settings.tsx, types.ts
-data/                 Frozen dataset from scripts/ingest_afcd.py: trails.json, trails_raw.geojson, gpx/, snapshots/
+data/                 Frozen dataset from scripts/ingest_afcd.py: trails.json, trails_raw.geojson, gpx/, snapshots/; knowledge.json from scripts/build_knowledge.py
 ```
 
 ## Commands
@@ -26,6 +27,15 @@ cd backend && uv run pytest                                   # offline: scripte
 cd backend && uv run uvicorn app.main:app --host 0.0.0.0 --port 8000
 LLM_PROFILE=gpt-responses uv run uvicorn app.main:app ...     # profiles live in backend/config.yaml
 uv --project backend run python scripts/ingest_afcd.py        # refresh data/ (~1 min, scrapes hiking.gov.hk politely)
+uv --project backend run python scripts/build_knowledge.py    # re-embed data/knowledge.json (needs the Ollama server, ~30 s)
+
+# local models (Ollama; profiles `ollama` = qwen3:8b, `ollama-14b`; embeddings = bge-m3)
+scripts/ollama_serve.sh                                       # port 11435, 32k context; leave the menu-bar app on 11434 alone
+cd backend && uv run python -m eval.chat --profile ollama [--frozen] [--scenario t8]   # terminal chat
+cd backend && uv run python -m eval.run --profile ollama [--cases id,category:weather] [--resume FILE]
+cd backend && uv run python -m eval.baseline --profile ollama  # same cases, no tools
+cd backend && uv run python -m eval.run --summarize eval/results/*.jsonl
+cd backend && uv run python -m eval.trace traces/<session>.jsonl
 
 # mobile (Expo SDK 57)
 cd mobile && npx expo run:ios        # development build; Expo Go is NOT enough (react-native-maps Google provider + speech recognition)
@@ -37,16 +47,18 @@ Before calling a task done, run the relevant checks: `uv run pytest` for backend
 
 ## Invariants: don't break these
 
-- **Numbers come from tools, never the model.** `present_plan` is blocked until `check_closures` (every trail in the plan), `get_weather` and `get_daylight` have been called for that date. It is also blocked if km, hours or sunset differ from the tool data (`number_check` in `tools/agentic.py`). `refuse` is gated the same way, except for `OUT_OF_SCOPE`. Keep the gate in code, not only in the prompt.
+- **Numbers come from tools, never the model.** `present_plan` is blocked until `check_closures` (every trail in the plan), `get_weather` and `get_daylight` have been called for that date. It is also blocked if what those checks returned rules the plan out (a no-go warning or a heavy-rain forecast for the date, or a closed trail: `safety_check`), or if km, hours or sunset differ from the tool data (`number_check` in `tools/agentic.py`). `refuse` is gated the same way, except for `OUT_OF_SCOPE`. Keep the gate in code, not only in the prompt.
 - **The wire protocol is the contract between backend and app.** Any change to an event or schema must update both `backend/app/schemas.py` / the harness events and `mobile/src/lib/types.ts` + the reducer in `mobile/src/lib/agent.tsx`.
 - **History is append-only and replayed natively.** Assistant turns keep the raw provider output in `Message.native[provider_key]`, and adapters replay it verbatim: Anthropic thinking blocks / signatures, Responses reasoning items (`store=False` + `include=["reasoning.encrypted_content"]`). Never edit or strip earlier turns. Drop a `tool_use` from history only when the turn was cut off (refusal / max_tokens) and the call won't run.
-- **Tool arguments are validated with `jsonschema`** before a handler runs. Failures return `INVALID_ARGUMENTS` to the model and don't raise.
+- **Tool arguments are validated with `jsonschema`** before a handler runs. Failures return `INVALID_ARGUMENTS` to the model and don't raise. Tools that take trail ids reject unknown ids (an unknown id must never read as "open").
+- **Elevation and scenery are tool data too.** `ascent_m`/`max_m` come from the official GPX (`data.profiles()`, hysteresis-smoothed); `search_knowledge` returns official description passages to translate and cite, never figures.
+- **Eval results must not depend on the day's weather.** `eval/` runs on `eval/fixtures.py` (synthetic forecast, seed closures and sunset) unless `--live`.
 - **Every live feed goes through `cache.fetch_json`.** Live fetches are saved to the gitignored `data/snapshots/.live/`. On failure it falls back to that copy, then to the committed seed `data/snapshots/<key>.json`, so the demo still works offline. Keep the seeds committed (e.g. `hko_SRS_json_<year>.json` for every year the demo can plan into).
 - **Demo scenarios** (`session.scenario`: `clear`, `t8`, `rainstorm`, `thunderstorm`, `closure:<id>`) override only the weather/closure tools, and their results are labelled as overrides.
 
 ## Adding things
 
-- **Tool:** register it in `tools/hiking.py` or `tools/agentic.py` with `box.register(name, description, schema_or_pydantic_model)` and return `ToolOutput(content, summary=...)`. Add a label in `mobile/src/constants/palette.ts` (`TOOL_LABEL`).
+- **Tool:** register it in `tools/hiking.py` or `tools/agentic.py` with `box.register(name, description, schema_or_pydantic_model)` and return `ToolOutput(content, summary=...)`. Pydantic schemas go through `flatten_schema` (inlined `$ref`s, nullable types instead of `anyOf`, no titles): Grok stopped mid-object and qwen copied `anyOf` into its arguments when given the nested form. Keep hand-written schemas flat too. Add a label in `mobile/src/constants/palette.ts` (`TOOL_LABEL`).
 - **Provider:** implement `Provider.stream()` in `app/llm/` (yield `TextDelta`s, then exactly one `Completion`), add it to `_PROVIDERS` in `registry.py`, and add a conversion test in `backend/tests/test_llm_convert.py`.
 - **Skill:** add `app/skills/<name>.md` with a `description:` front-matter line. It shows up in the `load_skill` enum automatically.
 - For Anthropic/Claude API code, check current model IDs and SDK usage (via the `claude-api` skill) rather than memory. The default profile uses `claude-opus-5` with server-side `fallbacks: default`.
@@ -74,17 +86,21 @@ Before calling a task done, run the relevant checks: `uv run pytest` for backend
   - The Very Hot Weather Warning is reported but isn't an automatic no-go (hike-safety decides EXTREME_HEAT).
 - **iOS 27 SDK requires the UIScene life cycle.** Expo 57's template doesn't adopt it, so `mobile/plugins/withSceneLifecycle.js` patches the generated AppDelegate + Info.plist to use Expo's `ExpoAppSceneDelegate` (mirrors the SDK 58 template). Remove the plugin when upgrading to SDK 58.
 - **Local HTTP clients here go through a SOCKS proxy.** Use `websockets.connect(..., proxy=None)` in scripts that call localhost.
+- **Ollama:**
+  - Its OpenAI-compatible endpoint ignores `num_ctx`, so the context length must be set on the server (`scripts/ollama_serve.sh`); otherwise the ~4k-token prompt plus history is silently truncated.
+  - qwen3's thinking arrives in a separate `reasoning` field, which the chat adapter ignores.
+  - qwen3 sometimes ends a turn with no text and no tool call, or types a tool name as text; the harness drops that turn and re-asks with a one-off note (`UNUSABLE_TURN_RETRIES`). Thinking is off in the `ollama` profile (`reasoning_effort: none`): ~3x faster and fewer empty turns; `ollama-think` keeps it on.
+  - Per model call on an M3 Pro (18 GB): about 7–10 s for qwen3:8b with thinking off, 15–35 s with it on.
 - **Secrets:** `backend/.env` holds the LLM keys and `mobile/.env` holds `GOOGLE_MAPS_IOS_KEY`. Both are gitignored; never commit keys. Model IDs for the OpenAI profiles in `config.yaml` are unverified.
 
 ## Status
 
-Week 1 of the plan is done: harness, 3 adapters, tools, gate, question cards, skills, data ingest, Expo app with map, cards and voice.
+Built so far:
+- Week 1: harness, 3 adapters, tools, gate, question cards, skills, data ingest, Expo app with map, cards and voice.
+- Week 2: `eval/` (43 cases, frozen feeds, no-tools baseline); the elevation profile (GPX → tools + plan-card chart); RAG `search_knowledge` (bge-m3 over description passages).
+- Tested end to end on xAI Grok (`grok` = grok-4.6, `grok-4.7`, `grok-responses`; `XAI_API_KEY`) and on local Ollama qwen3. The Claude and GPT profiles are unit-tested only, until keys are added. The harness has to work for many models: prefer code-enforced rules and clear tool errors over prompt tweaks for one model.
 
 Not built yet:
-- RAG (`search_knowledge`, local embeddings)
-- `get_transport` (Google Directions, server-side)
-- Elevation profile (from `data/gpx/`)
-- `eval/` (~40 scenarios, cross-provider table, no-tools baseline)
-- User study
-
-Not yet exercised against a real LLM or a simulator.
+- `get_transport` (Google Directions, server-side), deferred.
+- User study.
+- Anthropic prompt caching: the system prompt is already cache-stable, since the clock time moved into user messages.

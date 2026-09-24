@@ -32,7 +32,14 @@ def _parse_date(s: str) -> date:
     return date.fromisoformat(s)
 
 
+def _elevation(tid: str) -> dict[str, Any] | None:
+    """Ascent/height summary from the official GPX (no chart arrays), or None when it has no heights."""
+    prof = data.profiles().get(tid)
+    return {k: prof[k] for k in ("ascent_m", "descent_m", "max_m", "min_m", "source")} if prof else None
+
+
 def _brief(t: dict[str, Any]) -> dict[str, Any]:
+    prof = data.profiles().get(t["id"]) or {}
     return {
         "id": t["id"],
         "name": t["name"],
@@ -43,6 +50,8 @@ def _brief(t: dict[str, Any]) -> dict[str, Any]:
         "difficulty": t["difficulty"],
         "start": t["start"],
         "finish": t["finish"],
+        "ascent_m": prof.get("ascent_m"),
+        "max_m": prof.get("max_m"),
     }
 
 
@@ -58,6 +67,7 @@ def register(box: ToolBox) -> None:
                 "min_hours": {"type": "number"},
                 "max_stars": {"type": "integer", "minimum": 1, "maximum": 5},
                 "min_stars": {"type": "integer", "minimum": 1, "maximum": 5},
+                "max_ascent_m": {"type": "number", "description": "Total climb ceiling in metres (from the official GPX). Trails without height data are kept, with ascent_m null"},
                 "text": {"type": "string", "description": "Substring of the English trail name, start or finish"},
                 "sort": {"type": "string", "enum": ["longest", "shortest"], "description": "By official hours; default longest first"},
                 "limit": {"type": "integer", "minimum": 1, "maximum": 25},
@@ -76,24 +86,63 @@ def register(box: ToolBox) -> None:
             rows = [t for t in rows if t.get("stars") is not None and t["stars"] <= s]
         if (s := args.get("min_stars")) is not None:
             rows = [t for t in rows if t.get("stars") is not None and t["stars"] >= s]
+        if (a := args.get("max_ascent_m")) is not None:
+            prof = data.profiles()
+            rows = [t for t in rows if t["id"] not in prof or prof[t["id"]]["ascent_m"] <= a]
         if q := (args.get("text") or "").lower():
             rows = [t for t in rows if q in f'{t["name"]} {t["start"]} {t["finish"]}'.lower()]
         sign = 1 if args.get("sort") == "shortest" else -1
         rows.sort(key=lambda t: (t.get("official_hours") is None, sign * (t.get("official_hours") or 0)))
         out = [_brief(t) for t in rows[: args.get("limit", 12)]]
-        return ToolOutput({"count": len(rows), "trails": out}, summary=f"{len(rows)} trails match")
+        return ToolOutput({"count": len(rows), "trails": out, "note": "ascent_m / max_m: total climb and highest point from "
+                           "the official GPX; null means no height data (unknown, not flat)."}, summary=f"{len(rows)} trails match")
 
     @box.register(
         "get_trail",
         "Full official record for one trail: length, official walking time, star ratings, start/finish, "
-        "the official page URL (cite it) and the Chinese description.",
+        "elevation (total ascent and highest point, from the official GPX), the official page URL (cite it) and the Chinese description.",
         obj({"id": {"type": "string"}}, ["id"]),
     )
     async def get_trail(args: dict[str, Any], ctx: ToolContext) -> ToolOutput:
         t = data.trails().get(args["id"])
         if not t:
             return ToolOutput(f"Unknown trail id {args['id']!r}", is_error=True, summary="unknown trail")
-        return ToolOutput(t, summary=t["name"])
+        return ToolOutput({**t, "elevation": _elevation(t["id"])}, summary=t["name"])
+
+    @box.register(
+        "search_knowledge",
+        "Semantic search over the official hiking.gov.hk trail descriptions (Chinese; query in English is fine) for scenery "
+        "and features: sea views, waterfalls, war relics, shade, villages, birds. Filter with search_trails first and pass "
+        "those ids as trail_ids, so it ranks only trails that fit. Returns passages to translate and cite, never figures to quote.",
+        obj(
+            {
+                "query": {"type": "string", "description": "What the user wants to see or avoid, e.g. 'sea views and beaches'"},
+                "trail_ids": {"type": "array", "items": {"type": "string"}, "description": "Rank only these trails (from search_trails)"},
+                "k": {"type": "integer", "minimum": 1, "maximum": 8, "description": "Passages to return (default 5)"},
+            },
+            ["query"],
+        ),
+    )
+    async def search_knowledge(args: dict[str, Any], ctx: ToolContext) -> ToolOutput:
+        trails = data.trails()
+        ids = args.get("trail_ids") or []
+        if unknown := [t for t in ids if t not in trails]:
+            return ToolOutput(f"Unknown trail ids {unknown}; use ids from search_trails.", is_error=True, summary="unknown trail id")
+        chunks = [c for c in data.knowledge() if not ids or c["trail_id"] in ids]
+        if not chunks:
+            return ToolOutput({"passages": [], "note": "No official description for these trails."}, summary="no descriptions")
+        try:
+            q = await data.embed_query(args["query"])
+        except Exception as e:  # the embedder is optional: planning works without it
+            return ToolOutput(f"search_knowledge is unavailable ({type(e).__name__}); read descriptions with get_trail instead.",
+                              is_error=True, summary="embedder offline")
+        ranked = sorted(chunks, key=lambda c: -sum(a * b for a, b in zip(q, c["vec"])))[: args.get("k", 5)]
+        passages = [{"trail_id": c["trail_id"], "name": trails[c["trail_id"]]["name"], "text_zh": c["text"],
+                     "score": round(sum(a * b for a, b in zip(q, c["vec"])), 3), "url": trails[c["trail_id"]]["url"]}
+                    for c in ranked]
+        return ToolOutput({"query": args["query"], "passages": passages, "source": "hiking.gov.hk trail descriptions (zh)",
+                           "note": "Translate what you use; cite the url. Don't claim a feature no passage supports."},
+                          summary=f"{len(passages)} passages · top {passages[0]['name'][:30]}")
 
     @box.register(
         "check_closures",
@@ -101,6 +150,10 @@ def register(box: ToolBox) -> None:
         obj({"ids": {"type": "array", "items": {"type": "string"}, "minItems": 1}}, ["ids"]),
     )
     async def check_closures(args: dict[str, Any], ctx: ToolContext) -> ToolOutput:
+        # An unknown id would come back "not closed": a false all-clear. Make the model look it up first.
+        if unknown := [t for t in args["ids"] if t not in data.trails()]:
+            return ToolOutput(f"Unknown trail ids {unknown}. Use the `id` field from search_trails (e.g. search_trails(text=...)), "
+                              "like 'hk_8' or 'cty_2'.", is_error=True, summary="unknown trail id")
         rows, meta = await data.closures()
         scenario = ctx.session.scenario
         if scenario.startswith("closure:"):
@@ -234,7 +287,7 @@ def register(box: ToolBox) -> None:
         role = args.get("role", "primary")
         await ctx.emit({
             "type": "map", "op": "draw_gpx",
-            "payload": {"trail_id": t["id"], "name": t["name"], "role": role, "segments": segs,
+            "payload": {"trail_id": t["id"], "name": t["name"], "role": role, "segments": segs, "profile": data.profiles().get(t["id"]),
                         "markers": [{"kind": "start", "label": t["start"], "coord": segs[0][0]},
                                     {"kind": "finish", "label": t["finish"], "coord": segs[-1][-1]}]},
         })

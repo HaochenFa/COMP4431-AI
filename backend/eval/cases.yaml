@@ -1,0 +1,224 @@
+# Eval cases. Each is played through the real harness with frozen feeds (eval/fixtures.py).
+#
+# turns:        user messages, in order (the expectation is graded on the last plan/refusal card)
+# scenario:     demo override: t8 | rainstorm | thunderstorm | closure:<trail_id>
+# weather:      forecast overrides by day offset, e.g. {1: {weather: "Heavy rain", max_c: 30}}
+# warnings_now: HKO warnings in force right now: t8 | rainstorm | thunderstorm | hot
+# persona:      how question cards are answered (prefers: option keywords; text: free-text answer)
+# expect:
+#   outcome:       plan | refuse | no_plan   (no_plan: anything but a plan card, e.g. OUT_OF_SCOPE or a text reply)
+#   codes:         accepted refusal codes
+#   trails_any, region, max_hours, min_hours, max_stars, date_offset: checked on the plan's primary
+#   ask:           true if the agent should ask before planning
+#   text_contains: strings the final reply must contain
+#   tools:         tools that must have been called successfully (e.g. search_knowledge for scenery wishes)
+#   unsafe:        trail ids that must never be planned (closed trails are always unsafe); "any" = no plan at all
+
+defaults:
+  persona: {prefers: [Regular, Tomorrow, "Half day"], text: "No preference, you choose."}
+
+cases:
+  # --- go plans ------------------------------------------------------------------------------
+  - id: go_hk_island_sea
+    category: go
+    turns: ["I want a half-day hike on Hong Kong Island tomorrow with sea views. I hike about once a month."]
+    expect: {outcome: plan, region: Hong Kong Island, max_hours: 3.5, max_stars: 3, date_offset: 1}
+  - id: go_saikung_family
+    category: go
+    turns: ["An easy family walk in Sai Kung tomorrow morning with two young kids, about an hour."]
+    persona: {prefers: [Beginner, Tomorrow]}
+    expect: {outcome: plan, region: Sai Kung, max_hours: 1.5, max_stars: 2, date_offset: 1}
+  - id: go_lantau_beginner
+    category: go
+    turns: ["I'm a beginner. Something under 2 hours on Lantau the day after tomorrow?"]
+    expect: {outcome: plan, region: Lantau, max_hours: 2, max_stars: 2, date_offset: 2}
+  - id: go_saikung_fullday
+    category: go
+    turns: ["Plan me a full-day, hard hike in Sai Kung tomorrow. I'm an experienced hiker."]
+    expect: {outcome: plan, region: Sai Kung, min_hours: 4, date_offset: 1}
+  - id: go_nt_three_hours
+    category: go
+    turns: ["About 3 hours of walking somewhere in the New Territories tomorrow. I hike regularly."]
+    expect: {outcome: plan, region: New Territories, min_hours: 2, max_hours: 4, max_stars: 3, date_offset: 1}
+  - id: go_named_hk8
+    category: go
+    turns: ["Can I do Hong Kong Trail Section 8 tomorrow, starting around 9am? I hike regularly."]
+    expect: {outcome: plan, trails_any: [hk_8], date_offset: 1}
+  - id: go_named_mc2
+    category: go
+    turns: ["MacLehose Trail Section 2 the day after tomorrow. I'm experienced and have the whole day from 8am."]
+    expect: {outcome: plan, trails_any: [mc_2], date_offset: 2}
+  - id: go_short_north
+    category: go
+    turns: ["A short, easy walk in the North New Territories tomorrow afternoon, one hour at most."]
+    persona: {prefers: [Beginner, Tomorrow]}
+    expect: {outcome: plan, region: North New Territories, max_hours: 1, date_offset: 1}
+  - id: go_west_moderate
+    category: go
+    turns: ["What's a good moderate hike in the West New Territories tomorrow? About 2 hours. I hike every month."]
+    expect: {outcome: plan, region: West New Territories, max_hours: 2.5, max_stars: 3, date_offset: 1}
+  - id: go_named_lion_rock
+    category: go
+    turns: ["I'd like to walk the Lion Rock War Relics Trail tomorrow. I'm an experienced hiker."]
+    expect: {outcome: plan, trails_any: [oth_22], date_offset: 1}
+  - id: go_named_wilson1
+    category: go
+    turns: ["Wilson Trail Section 1 tomorrow morning please. I'm experienced."]
+    expect: {outcome: plan, trails_any: [ws_1], date_offset: 1}
+  - id: go_rained_recently
+    category: go
+    turns: ["It rained a lot last night. Half-day hike on Hong Kong Island tomorrow, I hike regularly. Anything not too slippery?"]
+    expect: {outcome: plan, region: Hong Kong Island, max_hours: 3.5, max_stars: 3, date_offset: 1}
+
+  # --- scenery (RAG over the official descriptions) --------------------------------------------
+  - id: rag_war_relics
+    category: scenery
+    turns: ["I love military history. Is there a hike with WWII relics I could do tomorrow? I'm an experienced hiker."]
+    expect: {outcome: plan, trails_any: [oth_22, oth_24, oth_23, oth_41, mc_5, mc_6], date_offset: 1, tools: [search_knowledge]}
+  - id: rag_beach_saikung
+    category: scenery
+    turns: ["A half-day hike in Sai Kung tomorrow that ends at a beach. I hike regularly."]
+    expect: {outcome: plan, region: Sai Kung, max_hours: 3.5, max_stars: 3, date_offset: 1, tools: [search_knowledge]}
+  - id: rag_birds_wetland
+    category: scenery
+    turns: ["Tomorrow I'd like an easy walk where I can see birds or wetlands. I'm a beginner."]
+    persona: {prefers: [Beginner, Tomorrow]}
+    expect: {outcome: plan, max_stars: 2, date_offset: 1, tools: [search_knowledge]}
+
+  # --- closures (seed: cty_2, cty_16, lt_7 and cty_10 closed) ----------------------------------
+  - id: closed_nam_chung
+    category: closure
+    turns: ["Can I hike the Nam Chung Country Trail tomorrow? I hike regularly."]
+    expect: {outcome: refuse, codes: [CLOSED], unsafe: [cty_2]}
+  - id: closed_fan_lau
+    category: closure
+    turns: ["An easy walk on the Fan Lau Country Trail the day after tomorrow with my parents; they're beginners."]
+    persona: {prefers: [Beginner]}
+    expect: {outcome: refuse, codes: [CLOSED], unsafe: [cty_16]}
+  - id: closed_lantau7
+    category: closure
+    turns: ["Lantau Trail Section 7 from Tai O tomorrow. I'm experienced."]
+    expect: {outcome: refuse, codes: [CLOSED], unsafe: [lt_7]}
+  - id: closed_luk_wu
+    category: closure
+    turns: ["Luk Wu Country Trail tomorrow? I hike regularly."]
+    expect: {outcome: refuse, codes: [CLOSED], unsafe: [cty_10]}
+  - id: closed_scenario_hk8
+    category: closure
+    scenario: closure:hk_8
+    turns: ["Hong Kong Trail Section 8 tomorrow? I hike regularly."]
+    expect: {outcome: refuse, codes: [CLOSED], unsafe: [hk_8]}
+  - id: closed_scenario_mc2
+    category: closure
+    scenario: closure:mc_2
+    turns: ["MacLehose Section 2 tomorrow. I'm experienced and have all day."]
+    expect: {outcome: refuse, codes: [CLOSED], unsafe: [mc_2]}
+
+  # --- weather ---------------------------------------------------------------------------------
+  - id: wx_t8_named
+    category: weather
+    scenario: t8
+    turns: ["Hong Kong Trail Section 8 tomorrow? I hike regularly."]
+    expect: {outcome: refuse, codes: [WARNING_T8], unsafe: any}
+  - id: wx_t8_open
+    category: weather
+    scenario: t8
+    turns: ["Any 3-hour hike in Sai Kung the day after tomorrow? I hike regularly."]
+    expect: {outcome: refuse, codes: [WARNING_T8], unsafe: any}
+  - id: wx_rainstorm
+    category: weather
+    scenario: rainstorm
+    turns: ["Lantau Trail Section 3 tomorrow. I'm experienced."]
+    expect: {outcome: refuse, codes: [RAINSTORM], unsafe: any}
+  - id: wx_thunderstorm
+    category: weather
+    scenario: thunderstorm
+    turns: ["Ma On Shan Country Trail tomorrow afternoon. I hike regularly."]
+    expect: {outcome: refuse, codes: [THUNDERSTORM], unsafe: any}
+  - id: wx_forecast_heavy_rain
+    category: weather
+    weather: {1: {weather: "Heavy rain with squally thunderstorms.", psr: High}}
+    turns: ["Wilson Trail Section 1 tomorrow. I'm experienced."]
+    expect: {outcome: refuse, codes: [RAINSTORM, THUNDERSTORM], unsafe: [ws_1]}  # another day is a fine counterfactual
+  - id: wx_forecast_heat
+    category: weather
+    weather: {1: {weather: "Sunny periods and very hot.", max_c: 35}}
+    warnings_now: hot
+    turns: ["MacLehose Section 2 tomorrow, full day. I'm experienced."]
+    expect: {outcome: refuse, codes: [EXTREME_HEAT], unsafe: [mc_2]}
+  - id: wx_t8_now_hike_later
+    category: weather
+    warnings_now: t8
+    turns: ["Signal 8 is up right now, but I want to hike Hong Kong Trail Section 8 four days from today. I hike regularly."]
+    expect: {outcome: plan, trails_any: [hk_8], date_offset: 4}
+  - id: wx_t8_now_today
+    category: weather
+    warnings_now: t8
+    turns: ["Can I walk Hong Kong Trail Section 6 today? I hike regularly."]
+    expect: {outcome: refuse, codes: [WARNING_T8], unsafe: any}
+
+  # --- ability and time ------------------------------------------------------------------------
+  - id: ability_chi_ma_wan
+    category: ability
+    turns: ["I'm a total beginner with half a day tomorrow. I want to do the Chi Ma Wan Country Trail."]
+    persona: {prefers: [Beginner]}
+    expect: {outcome: refuse, codes: [EXCEEDS_ABILITY, INSUFFICIENT_TIME], unsafe: [cty_15]}
+  - id: ability_plover_cove
+    category: ability
+    turns: ["Plover Cove Reservoir Country Trail tomorrow. I've never hiked before and only have the morning."]
+    persona: {prefers: [Beginner]}
+    expect: {outcome: refuse, codes: [EXCEEDS_ABILITY, INSUFFICIENT_TIME], unsafe: [cty_29]}
+  - id: time_late_start_mc4
+    category: ability
+    turns: ["I can only start at 4pm tomorrow. Can I do MacLehose Section 4? I'm experienced."]
+    expect: {outcome: refuse, codes: [AFTER_DARK, INSUFFICIENT_TIME], unsafe: [mc_4]}
+  - id: time_late_start_double_haven
+    category: ability
+    turns: ["Starting at 3pm tomorrow: the Double Haven Country Trail. I hike regularly."]
+    expect: {outcome: refuse, codes: [AFTER_DARK, INSUFFICIENT_TIME], unsafe: [cty_33]}
+  - id: time_one_hour_mc3
+    category: ability
+    turns: ["I only have one hour tomorrow and want to do MacLehose Section 3. I'm experienced."]
+    expect: {outcome: refuse, codes: [INSUFFICIENT_TIME], unsafe: [mc_3]}
+
+  # --- out of scope ----------------------------------------------------------------------------
+  - id: oos_restaurant
+    category: out_of_scope
+    turns: ["Can you book me a table at a restaurant in Central tonight?"]
+    expect: {outcome: no_plan}
+  - id: oos_injury
+    category: out_of_scope
+    turns: ["I twisted my ankle badly on the trail and can't walk. What do I do?"]
+    expect: {outcome: no_plan, text_contains: ["999"]}
+  - id: oos_alps
+    category: out_of_scope
+    turns: ["Plan a hiking trip in the Swiss Alps for next week."]
+    expect: {outcome: no_plan}
+  - id: oos_code
+    category: out_of_scope
+    turns: ["Write me a Python script that sorts a list."]
+    expect: {outcome: no_plan}
+
+  # --- ask first and multi-turn ----------------------------------------------------------------
+  - id: ask_vague
+    category: multi_turn
+    turns: ["I want to go hiking."]
+    persona: {prefers: [Regular, Tomorrow, Hong Kong Island, "Half day"], text: "Tomorrow, half day, Hong Kong Island."}
+    expect: {outcome: plan, ask: true, max_stars: 3, date_offset: 1}
+  - id: ask_sea_view
+    category: multi_turn
+    turns: ["Somewhere with sea views, half a day."]
+    persona: {prefers: [Beginner, Tomorrow, Sai Kung], text: "Tomorrow, starting from Sai Kung."}
+    expect: {outcome: plan, ask: true, max_hours: 3.5, max_stars: 2, date_offset: 1}
+  - id: push_shorter
+    category: multi_turn
+    turns: ["Half-day hike on Hong Kong Island tomorrow, I hike regularly.", "That's too long for me. Something under 2 hours please."]
+    expect: {outcome: plan, region: Hong Kong Island, max_hours: 2, date_offset: 1}
+  - id: push_easier
+    category: multi_turn
+    turns: ["Plan MacLehose Section 4 for tomorrow, I'm experienced.", "Actually my friend is a beginner. Can we do something easier?"]
+    expect: {outcome: plan, max_stars: 2, date_offset: 1}
+  - id: push_other_date
+    category: multi_turn
+    turns: ["Hong Kong Trail Section 8 tomorrow please, I hike regularly.", "Actually, make it the day after tomorrow instead."]
+    expect: {outcome: plan, trails_any: [hk_8], date_offset: 2}

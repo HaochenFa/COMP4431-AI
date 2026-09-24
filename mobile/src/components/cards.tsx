@@ -4,6 +4,8 @@ import { Linking, Pressable, StyleSheet, Text, TextInput, View } from 'react-nat
 import { C, TOOL_LABEL } from '@/constants/palette';
 import type { CardAnswer, ChatItem, Citation, QuestionCard, Refusal, TripPlan } from '@/lib/types';
 
+import { ElevationChart } from './elevation-profile';
+
 type ToolsItem = Extract<ChatItem, { kind: 'tools' }>;
 
 const STATUS_ICON = { start: '…', ok: '✓', error: '!', blocked: '⛔', waiting: '?' } as const;
@@ -122,6 +124,7 @@ export function PlanCard({ plan }: { plan: TripPlan }) {
       <Text style={styles.meta}>
         {p.length_km} km · {p.hours} h official{p.stars ? ` · ${stars(p.stars)}` : ''}
       </Text>
+      {p.profile && <ElevationChart profile={p.profile} />}
       <Text style={styles.body}>{plan.why_this}</Text>
       <View style={styles.timeline}>
         {plan.timeline.map((s, i) => (

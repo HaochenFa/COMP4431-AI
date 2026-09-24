@@ -17,6 +17,7 @@ export const TRACK_COLOR = { primary: C.post, backup: C.water, rejected: C.refus
 export const TOOL_LABEL: Record<string, string> = {
   search_trails: 'Search trails',
   get_trail: 'Trail record',
+  search_knowledge: 'Trail notes',
   check_closures: 'AFCD closures',
   get_weather: 'HKO weather',
   get_daylight: 'Sunset',

@@ -70,7 +70,8 @@ class QuestionCard(BaseModel):
     id: str
     type: Literal["single", "multi", "text"]
     prompt: str
-    options: list[str] | None = None
+    # A plain array (not "array or null"): small models copy an anyOf schema into their arguments.
+    options: list[str] = Field(default_factory=list, description="2-5 short choices for single/multi; [] for text")
 
 
 class AskUser(BaseModel):

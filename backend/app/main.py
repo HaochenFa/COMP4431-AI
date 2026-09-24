@@ -49,7 +49,7 @@ async def trail(trail_id: str) -> dict[str, Any]:
     t = data.trails().get(trail_id)
     if not t:
         raise HTTPException(404, "unknown trail")
-    return {**t, "segments": data.geometries().get(trail_id, [])}
+    return {**t, "segments": data.geometries().get(trail_id, []), "profile": data.profiles().get(trail_id)}
 
 
 @app.websocket("/ws/chat")

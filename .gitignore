@@ -13,6 +13,7 @@ backend/.venv/
 __pycache__/
 .pytest_cache/
 backend/traces/
+data/snapshots/.live/
 
 # Node / Expo (mobile/)
 node_modules/
@@ -36,3 +37,4 @@ mobile/android/
 .claude/settings.local.json
 
 .DS_Store
+backend/eval/results/

@@ -1,7 +1,28 @@
 // Mirrors backend/app/schemas.py and the WebSocket protocol in backend/app/agent/harness.py.
 
 export type Citation = { source: string; ref: string; quote: string };
-export type TrailPick = { id: string; name: string; length_km: number; hours: number; stars?: number | null };
+export type TrailPick = {
+  id: string;
+  name: string;
+  length_km: number;
+  hours: number;
+  stars?: number | null;
+  // Added by the server from the dataset when the plan card is emitted.
+  start?: string;
+  start_coord?: LatLng | null;
+  profile?: ElevationProfile | null;
+};
+
+// From the official GPX (backend/app/tools/data.py profiles()); null when the GPX has no heights.
+export type ElevationProfile = {
+  d_km: number[];
+  ele_m: number[];
+  ascent_m: number;
+  descent_m: number;
+  max_m: number;
+  min_m: number;
+  source: string;
+};
 
 export type TripPlan = {
   decision: 'go';
@@ -36,15 +57,24 @@ export type Track = {
   trail_id: string;
   name: string;
   role: TrackRole;
-  coords: LatLng[];
+  segments: LatLng[][]; // drawn separately: joining them would draw lines across gaps in the track
   markers: { kind: 'start' | 'finish'; label: string; coord: LatLng }[];
+  profile?: ElevationProfile | null;
 };
 
 export type ToolStatus = 'start' | 'ok' | 'error' | 'blocked' | 'waiting';
 
 export type ServerEvent =
-  | { type: 'hello'; session: string; scenario: string; model: string; waiting_for: string | null }
+  | {
+      type: 'hello';
+      session: string;
+      scenario: string;
+      model: string;
+      waiting_for: string | null;
+      pending_ask: { call_id: string; cards: QuestionCard[] } | null;
+    }
   | { type: 'assistant_delta'; text: string }
+  | { type: 'assistant_reset' } // the model's turn was re-issued: drop the text streamed so far
   | { type: 'assistant_done'; waiting_for?: string }
   | { type: 'tool_trace'; call_id: string; name: string; status: ToolStatus; args?: Record<string, unknown>; summary?: string }
   | { type: 'ask_user'; call_id: string; cards: QuestionCard[] }

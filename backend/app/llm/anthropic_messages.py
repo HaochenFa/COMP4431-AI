@@ -6,7 +6,7 @@ from typing import Any, AsyncIterator
 
 import anthropic
 
-from .base import Completion, Message, ProviderEvent, StopReason, TextDelta, ToolCall, ToolSpec
+from .base import Completion, Message, ProviderEvent, StopReason, TextDelta, TextReset, ToolCall, ToolSpec
 
 _STOP: dict[str, StopReason] = {"end_turn": "end", "stop_sequence": "end", "tool_use": "tool_use", "max_tokens": "max_tokens", "refusal": "refusal"}
 
@@ -65,7 +65,7 @@ class AnthropicProvider:
         model: str,
         api_key: str | None = None,
         base_url: str | None = None,
-        max_tokens: int = 16000,
+        max_tokens: int = 64000,  # streaming, so no HTTP-timeout reason to go lower
         effort: str | None = None,
         fallbacks: str | list[dict] | None = "default",
     ):
@@ -93,22 +93,29 @@ class AnthropicProvider:
 
         final = None
         for attempt in range(3):
+            streamed = False
             try:
                 async with self.client.beta.messages.stream(**params) as stream:
                     async for event in stream:
                         if event.type == "text":
+                            streamed = True
                             yield TextDelta(event.text)
                     final = await stream.get_final_message()
                 break
             except ValueError:
-                # Tool-input JSON the SDK could not parse at all (eager streaming): re-issue the turn.
+                # Tool-input JSON the SDK could not parse at all (eager streaming): re-issue the turn,
+                # telling the client to drop the text it already showed so it isn't duplicated.
                 if attempt == 2:
                     raise
+                if streamed:
+                    yield TextReset()
         assert final is not None
 
-        blocks = [b.model_dump(mode="json", exclude_none=True) for b in final.content]
-        text = "".join(b.text for b in final.content if b.type == "text")
-        calls = [ToolCall(b.id, b.name, b.input if isinstance(b.input, dict) else {}) for b in final.content if b.type == "tool_use"]
+        # Apply the post-fallback echo rules now, so the calls we run are exactly the ones replayed.
+        blocks = _sanitize_native([b.model_dump(mode="json", exclude_none=True) for b in final.content])
+        text = "".join(b["text"] for b in blocks if b.get("type") == "text")
+        calls = [ToolCall(b["id"], b["name"], b["input"] if isinstance(b.get("input"), dict) else {})
+                 for b in blocks if b.get("type") == "tool_use"]
         stop: StopReason = _STOP.get(final.stop_reason or "end_turn", "end")
         if stop in ("refusal", "max_tokens") and calls:
             # A refusal or truncation can cut a tool_use off mid-input: never run it, and

@@ -50,13 +50,18 @@ class TextDelta:
 
 
 @dataclass
+class TextReset:
+    """The adapter re-issued the turn: discard the text streamed since the turn began."""
+
+
+@dataclass
 class Completion:
     message: Message
     stop: StopReason
     usage: dict[str, int] = field(default_factory=dict)
 
 
-ProviderEvent = TextDelta | Completion
+ProviderEvent = TextDelta | TextReset | Completion
 
 
 class Provider(Protocol):
@@ -66,5 +71,5 @@ class Provider(Protocol):
     def stream(
         self, system: str, messages: list[Message], tools: list[ToolSpec]
     ) -> AsyncIterator[ProviderEvent]:
-        """Yield TextDelta events, then exactly one Completion."""
+        """Yield TextDelta events (and TextReset if the turn is re-issued), then exactly one Completion."""
         ...

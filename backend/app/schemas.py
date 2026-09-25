@@ -23,7 +23,7 @@ class TrailPick(BaseModel):
     name: str
     length_km: float
     hours: float = Field(description="Official walking time from get_trail / search_trails")
-    stars: int | None = None
+    stars: int | None = Field(default=None, ge=1, le=5, description="Official overall rating; null when the data has none")
 
 
 class WhyNot(BaseModel):
@@ -44,8 +44,8 @@ class TripPlan(BaseModel):
     backup: TrailPick | None = None
     why_this: str
     why_not: list[WhyNot] = []
-    timeline: list[TimelineStep]
-    finish_time: str = Field(description="HH:MM expected finish of the hike", pattern=HHMM)
+    timeline: list[TimelineStep] = Field(min_length=1)
+    finish_time: str = Field(description="HH:MM end of the hike step in the timeline (hike start + official hours)", pattern=HHMM)
     sunset: str = Field(description="HH:MM from get_daylight", pattern=HHMM)
     weather_summary: str
     citations: list[Citation]
@@ -70,7 +70,8 @@ class QuestionCard(BaseModel):
     id: str
     type: Literal["single", "multi", "text"]
     prompt: str
-    options: list[str] | None = None
+    # A plain array (not "array or null"): small models copy an anyOf schema into their arguments.
+    options: list[str] = Field(default_factory=list, description="2-5 short choices for single/multi; [] for text")
 
 
 class AskUser(BaseModel):

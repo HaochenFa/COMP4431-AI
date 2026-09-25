@@ -4,6 +4,13 @@
 
 default_profile: claude
 
+# search_knowledge embeddings (the index in data/knowledge.json is built with the same model:
+# uv --project backend run python scripts/build_knowledge.py). Multilingual: English queries, Chinese text.
+embeddings:
+  model: bge-m3
+  base_url: http://localhost:11435/v1
+  api_key_env: OLLAMA_API_KEY
+
 profiles:
   claude:
     provider: anthropic
@@ -29,12 +36,48 @@ profiles:
     model: gpt-5
     api_key_env: OPENAI_API_KEY
 
+  # xAI Grok over its OpenAI-compatible API (XAI_API_KEY). grok-4.6 is the more token-efficient one.
+  grok:
+    provider: openai_chat
+    model: grok-4.6
+    base_url: https://api.x.ai/v1
+    api_key_env: XAI_API_KEY
+
+  grok-4.7:
+    provider: openai_chat
+    model: grok-4.7
+    base_url: https://api.x.ai/v1
+    api_key_env: XAI_API_KEY
+
+  grok-responses:
+    provider: openai_responses
+    model: grok-4.6
+    base_url: https://api.x.ai/v1
+    api_key_env: XAI_API_KEY
+
+  # Local models: start the server with scripts/ollama_serve.sh (port 11435, 32k context).
   ollama:
     provider: openai_chat
-    model: qwen3:14b
-    base_url: http://localhost:11434/v1
+    model: qwen3:8b
+    base_url: http://localhost:11435/v1
     api_key_env: OLLAMA_API_KEY   # any non-empty value; Ollama ignores it
     max_tokens_param: max_tokens
+    reasoning_effort: none        # qwen3 thinking off: ~3x faster, and fewer empty turns
+
+  ollama-think:
+    provider: openai_chat
+    model: qwen3:8b
+    base_url: http://localhost:11435/v1
+    api_key_env: OLLAMA_API_KEY
+    max_tokens_param: max_tokens
+
+  ollama-14b:
+    provider: openai_chat
+    model: qwen3:14b
+    base_url: http://localhost:11435/v1
+    api_key_env: OLLAMA_API_KEY
+    max_tokens_param: max_tokens
+    reasoning_effort: none
 
   openrouter:
     provider: openai_chat

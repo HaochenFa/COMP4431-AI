@@ -17,9 +17,13 @@ Trailhead is a pre-trip feasibility agent. You describe a hike loosely ("Saturda
 - English chat about Hong Kong hiking, using the official data below.
 
 **Additional**
-- **Provider-agnostic agent harness.** One loop runs on the Anthropic Messages API, OpenAI Chat Completions (and any OpenAI-compatible server: DeepSeek, OpenRouter, Ollama), or the OpenAI Responses API. You switch with `LLM_PROFILE` in `backend/config.yaml`.
+- **Provider-agnostic agent harness.** One loop runs on the Anthropic Messages API, OpenAI Chat Completions (and any OpenAI-compatible server: xAI Grok, DeepSeek, OpenRouter, Ollama), or the OpenAI Responses API (OpenAI or xAI). You switch with `LLM_PROFILE` in `backend/config.yaml`.
 - **Safety gate.** `present_plan` and `refuse` are blocked until the agent has actually checked closures and weather (and sunset, for plans) for those trails on that date. A plan is also blocked when any of its figures (km, official hours, sunset) differ from what the tools returned.
 - **Question cards.** When information is missing, the agent pauses and shows single-choice, multiple-choice or free-text cards. It resumes when you answer.
+- **Trail knowledge search (RAG).** `search_knowledge` embeds the official hiking.gov.hk trail descriptions (Chinese) with a local multilingual model (bge-m3), so "sea views" or "WWII relics" in English finds the right trails. It ranks only the trails that already passed the hard filters, and the plan cites the passage it relied on.
+- **Elevation profiles.** Total climb and high point come from the official GPX tracks (smoothed, so DEM noise doesn't inflate the climb). They're searchable ("not too steep") and drawn as a chart on the plan card.
+- **Evaluation suite.** 43 graded scenarios (go plans, closures, T8/rainstorm/thunderstorm/heat, ability and daylight limits, out of scope, pushback) run through the real harness on frozen feeds. They report pass and safety rates, gate blocks and self-corrections, and a no-tools baseline for comparison (`backend/eval/`).
+- **Runs on local models.** The same harness drives Ollama (qwen3), with a dedicated server script and robustness fixes for small models (empty-turn retry, strict trail ids).
 - **Skills.** Step-by-step procedures (intake, search, recommend, plan, maps, safety) that the agent loads only when needed.
 - **Official live data.**
   - AFCD *Hiking Trails in Country Parks*: 152 sections, geometry and GPX tracks.
@@ -42,7 +46,7 @@ Requires Python 3.12 and [uv](https://docs.astral.sh/uv/).
 
 ```bash
 cd backend
-cp .env.example .env            # add ANTHROPIC_API_KEY and/or OPENAI_API_KEY, pick LLM_PROFILE
+cp .env.example .env            # add ANTHROPIC_API_KEY / OPENAI_API_KEY / XAI_API_KEY, pick LLM_PROFILE (e.g. grok)
 uv sync
 uv run uvicorn app.main:app --host 0.0.0.0 --port 8000
 curl localhost:8000/health      # shows the provider and model in use
@@ -53,6 +57,26 @@ To refresh the frozen trail dataset (takes about 1 minute; polite scraping of hi
 
 ```bash
 uv --project backend run python scripts/ingest_afcd.py
+```
+
+### Local models (optional, no API key)
+
+Requires [Ollama](https://ollama.com).
+
+```bash
+ollama pull qwen3:8b && ollama pull bge-m3
+scripts/ollama_serve.sh                    # port 11435 with a 32k context (Ollama's default truncates the prompt)
+# backend/.env: LLM_PROFILE=ollama and OLLAMA_API_KEY=ollama (any value)
+cd backend && uv run python -m eval.chat --profile ollama     # chat in the terminal
+```
+
+### Evaluation
+
+```bash
+cd backend
+uv run python -m eval.run --profile ollama        # 43 cases, frozen weather/closure feeds; about 4 min per case on qwen3:8b
+uv run python -m eval.baseline --profile ollama   # the same cases without tools
+uv run python -m eval.run --summarize eval/results/*.jsonl
 ```
 
 ### 2. iOS app
@@ -73,9 +97,9 @@ In the app, open ⚙︎ Settings and set the backend URL:
 ## Layout
 
 ```
-backend/   FastAPI app: app/llm (3 provider adapters), app/agent (harness, session, prompts), app/tools, app/skills
+backend/   FastAPI app: app/llm (3 provider adapters + embeddings), app/agent (harness, session, prompts), app/tools, app/skills; eval/
 mobile/    Expo app: src/app (screens), src/components (map, chat sheet, cards, voice), src/lib (protocol, state)
-data/      trails.json, trails_raw.geojson, gpx/, snapshots/  (from scripts/ingest_afcd.py)
+data/      trails.json, trails_raw.geojson, gpx/, snapshots/ (from scripts/ingest_afcd.py); knowledge.json (scripts/build_knowledge.py)
 docs/      spec, architecture poster
 ```
 

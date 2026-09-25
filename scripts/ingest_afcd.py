@@ -49,20 +49,36 @@ def _text(fragment: str) -> str:
 def parse_trail_page(page: str) -> dict:
     """Extract official summary fields from a hiking.gov.hk trail page (zh-tw)."""
     out: dict = {}
+    # The summary block sits after a large inline script, so take everything up to the transport section.
     i = page.find("路徑概要")
-    summary = _text(page[i : i + 6000]) if i >= 0 else ""
-    if m := re.search(r"時間\|([\d.]+)\s*小時", summary):
+    j = page.find("交通資訊", page.find("評分", i + 1)) if i >= 0 else -1
+    summary = _text(page[i : j if j > i else i + 60000]) if i >= 0 else ""
+    if m := re.search(r"時間\s*\|\s*([\d.]+)\s*小時", summary):
         out["official_hours"] = float(m.group(1))
-    if m := re.search(r"綜合難度 \((\d) 星", summary):
+    if m := re.search(r"綜合難度\s*\(\s*(\d)\s*星", summary):
         out["stars"] = int(m.group(1))
     for key, label in [("length", "長度"), ("time", "時間"), ("ascent", "總攀升"), ("surface", "路面狀況")]:
-        if m := re.search(label + r" \(評分 (\d) 星\)", summary):
+        if m := re.search(label + r"\s*\(\s*評分\s*(\d)\s*星\s*\)", summary):
             out.setdefault("sub_ratings", {})[key] = int(m.group(1))
     if m := re.search(r'href="(//www\.hiking\.gov\.hk/[^"]+\.gpx)"', page):
         out["gpx_url"] = "https:" + m.group(1)
     if m := re.search(r'<meta name="description" content="([^"]*)"', page):
         out["description_zh"] = html.unescape(m.group(1)).strip()
     return out
+
+
+def get_page(client: httpx.Client, url: str, attempts: int = 3) -> str:
+    for attempt in range(attempts):
+        try:
+            r = client.get(url)
+            r.raise_for_status()
+            if "路徑概要" in r.text or attempt == attempts - 1:
+                return r.text
+        except httpx.HTTPError:
+            if attempt == attempts - 1:
+                raise
+        time.sleep(1 + attempt)
+    raise AssertionError("unreachable")
 
 
 def main() -> int:
@@ -106,7 +122,7 @@ def main() -> int:
             }
             try:
                 if rec["url"]:
-                    rec.update(parse_trail_page(client.get(rec["url"]).text))
+                    rec.update(parse_trail_page(get_page(client, rec["url"])))
             except httpx.HTTPError as e:
                 print(f"  ! page {rec['id']}: {e}", file=sys.stderr)
             if gpx_url := rec.get("gpx_url"):
@@ -124,8 +140,8 @@ def main() -> int:
 
     (DATA / "trails_raw.geojson").write_text(json.dumps(trails, ensure_ascii=False))
     (DATA / "trails.json").write_text(json.dumps(records, ensure_ascii=False, indent=1))
-    have_hours = sum("official_hours" in r for r in records)
-    print(f"wrote {len(records)} trails ({have_hours} with official hours)")
+    have = {k: sum(k in r for r in records) for k in ("official_hours", "stars", "sub_ratings", "description_zh")}
+    print(f"wrote {len(records)} trails; with " + ", ".join(f"{k}: {v}" for k, v in have.items()))
     return 0
 
 

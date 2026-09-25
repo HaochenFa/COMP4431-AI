@@ -10,6 +10,7 @@ import yaml
 
 from .anthropic_messages import AnthropicProvider
 from .base import Provider
+from .embeddings import Embedder
 from .openai_chat import OpenAIChatProvider
 from .openai_responses import OpenAIResponsesProvider
 
@@ -34,3 +35,10 @@ def build_provider(profile: str | None = None, path: Path = CONFIG_PATH) -> Prov
     if key_env := spec.pop("api_key_env", None):
         spec["api_key"] = os.getenv(key_env)
     return _PROVIDERS[kind](**spec)
+
+
+def build_embedder(path: Path = CONFIG_PATH) -> Embedder:
+    spec = dict(load_profiles(path)["embeddings"])
+    if key_env := spec.pop("api_key_env", None):
+        spec["api_key"] = os.getenv(key_env)
+    return Embedder(**spec)

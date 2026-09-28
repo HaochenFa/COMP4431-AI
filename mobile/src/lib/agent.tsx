@@ -1,7 +1,8 @@
-import { createContext, useContext, useEffect, useReducer, useRef, useState, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useReducer, useRef, useState, type ReactNode } from 'react';
 
-import { useSettings } from './settings';
-import type { CardAnswer, ChatItem, ClientEvent, Refusal, ServerEvent, Track, TripPlan } from './types';
+import { useRecent } from './recent';
+import { newSessionId, useSettings } from './settings';
+import type { CardAnswer, ChatItem, ClientEvent, Outcome, Refusal, ServerEvent, ToolStep, Track, TripPlan } from './types';
 
 type State = {
   items: ChatItem[];
@@ -21,7 +22,8 @@ type Action =
 
 const initial: State = { items: [], tracks: [], busy: false, waitingFor: null, scenario: 'live', model: '', lastOutcome: null };
 let seq = 0;
-const uid = () => `i${++seq}`;
+// Unique across app launches: plan ids are persisted (lib/recent.tsx) and must not collide after a reload.
+const uid = () => `i${Date.now().toString(36)}${(++seq).toString(36)}`;
 
 function reducer(state: State, action: Action): State {
   if (action.type === 'clear') return { ...initial, scenario: state.scenario, model: state.model };
@@ -65,8 +67,9 @@ function reducer(state: State, action: Action): State {
     case 'assistant_done':
       return { ...state, busy: false, waitingFor: ev.waiting_for ?? null };
     case 'tool_trace': {
-      const step = { call_id: ev.call_id, name: ev.name, status: ev.status, summary: ev.summary };
-      // A tool that shows a card (plan, refusal, question) finishes after its card, so its chip
+      // `args` arrive with the start event; later events for the same call keep them.
+      const step: ToolStep = { call_id: ev.call_id, name: ev.name, status: ev.status, summary: ev.summary, ...(ev.args ? { args: ev.args } : {}) };
+      // A tool that shows a card (plan, refusal, question) finishes after its card, so its step
       // may no longer be in the last item: update it wherever it is.
       const at = items.findLastIndex((it) => it.kind === 'tools' && it.steps.some((s) => s.call_id === ev.call_id));
       if (at >= 0) {
@@ -100,21 +103,43 @@ function reducer(state: State, action: Action): State {
   }
 }
 
+// The checks the safety gate requires before a plan or refusal (tools/agentic.py).
+const CHECKS = ['check_closures', 'get_weather', 'get_daylight'];
+
+/** The latest closure / weather / daylight steps between the user message before `itemId` and that item. */
+export function checksBefore(items: ChatItem[], itemId: string): ToolStep[] {
+  const at = items.findIndex((it) => it.id === itemId);
+  const latest = new Map<string, ToolStep>();
+  for (let i = at - 1; i >= 0 && items[i].kind !== 'user'; i--) {
+    const it = items[i];
+    if (it.kind !== 'tools') continue;
+    for (const s of [...it.steps].reverse()) if (CHECKS.includes(s.name) && !latest.has(s.name)) latest.set(s.name, s);
+  }
+  return CHECKS.flatMap((n) => latest.get(n) ?? []);
+}
+
 type AgentApi = State & {
   connected: boolean;
-  send: (text: string, source?: 'text' | 'voice') => void;
+  /** Text waiting in the chat composer (e.g. "Plan this hike" from a trail page). */
+  draft: string;
+  setDraft: (text: string) => void;
+  send: (text: string, source?: 'text' | 'voice') => boolean;
   answer: (callId: string, answers: CardAnswer[]) => void;
   setScenario: (scenario: string) => void;
-  reset: () => void;
+  newConversation: () => void;
+  trackFor: (trailId: string) => Track | undefined;
 };
 
 const AgentContext = createContext<AgentApi | null>(null);
 
 export function AgentProvider({ children }: { children: ReactNode }) {
-  const { settings, ready } = useSettings();
+  const { settings, ready, update } = useSettings();
+  const { add } = useRecent();
   const [state, dispatch] = useReducer(reducer, initial);
   const [connected, setConnected] = useState(false);
+  const [draft, setDraft] = useState('');
   const ws = useRef<WebSocket | null>(null);
+  const saved = useRef(new Set<string>());
 
   useEffect(() => {
     if (!ready) return;
@@ -145,25 +170,44 @@ export function AgentProvider({ children }: { children: ReactNode }) {
     };
   }, [ready, settings.backendUrl, settings.sessionId]);
 
+  // Keep every plan and refusal on the device, with the checks that let it through the gate.
+  useEffect(() => {
+    for (const it of state.items) {
+      if ((it.kind !== 'plan' && it.kind !== 'refusal') || saved.current.has(it.id)) continue;
+      saved.current.add(it.id);
+      const base = { id: it.id, checks: checksBefore(state.items, it.id), savedAt: Date.now() };
+      add(it.kind === 'plan' ? ({ ...base, kind: 'plan', plan: it.plan } satisfies Outcome) : { ...base, kind: 'refusal', refusal: it.refusal });
+    }
+  }, [state.items, add]);
+
   const post = (ev: ClientEvent) => {
     if (ws.current?.readyState !== WebSocket.OPEN) return false;
     ws.current.send(JSON.stringify(ev));
     return true;
   };
 
+  const trackFor = useCallback((trailId: string) => state.tracks.find((t) => t.trail_id === trailId), [state.tracks]);
+
   const api: AgentApi = {
     ...state,
     connected,
+    draft,
+    setDraft,
     send: (text, source = 'text') => {
       const clean = text.trim();
-      if (!clean || !post({ type: 'user_message', text: clean, source })) return;
+      if (!clean || !post({ type: 'user_message', text: clean, source })) return false;
       dispatch({ type: 'local_user', text: clean, source });
+      return true;
     },
     answer: (callId, answers) => {
       if (post({ type: 'card_answer', call_id: callId, answers })) dispatch({ type: 'local_answer', call_id: callId, answers });
     },
     setScenario: (scenario) => post({ type: 'set_scenario', scenario }),
-    reset: () => post({ type: 'reset' }),
+    newConversation: () => {
+      setDraft('');
+      update({ sessionId: newSessionId() });
+    },
+    trackFor,
   };
 
   return <AgentContext.Provider value={api}>{children}</AgentContext.Provider>;

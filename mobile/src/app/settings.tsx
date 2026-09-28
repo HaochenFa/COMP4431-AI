@@ -1,72 +1,114 @@
+import { Host, Picker, Text as SwiftText } from '@expo/ui/swift-ui';
+import { pickerStyle, tag } from '@expo/ui/swift-ui/modifiers';
+import { Stack, router } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Switch, Text, TextInput, View } from 'react-native';
+import { ScrollView, StyleSheet, Switch, TextInput, View } from 'react-native';
 
-import { C } from '@/constants/palette';
+import { ListRow, ListSection, T } from '@/components/ui';
+import { radius, useTheme } from '@/constants/theme';
 import { useAgent } from '@/lib/agent';
-import { newSessionId, useSettings } from '@/lib/settings';
+import { SCENARIOS } from '@/lib/scenarios';
+import { useSettings, type AppearanceSetting } from '@/lib/settings';
 
-// Demo scenarios override HKO warnings / AFCD closures on the server so a refusal can be shown on cue.
-const SCENARIOS = [
-  { id: 'live', label: 'Live data' },
-  { id: 'clear', label: 'Clear skies' },
-  { id: 't8', label: 'Typhoon T8' },
-  { id: 'rainstorm', label: 'Red rainstorm' },
-  { id: 'thunderstorm', label: 'Thunderstorm' },
-  { id: 'closure:hk_8', label: "Close Dragon's Back" },
+const APPEARANCE: { id: AppearanceSetting; label: string }[] = [
+  { id: 'dark', label: 'Night' },
+  { id: 'light', label: 'Day' },
+  { id: 'system', label: 'System' },
 ];
 
 export default function SettingsScreen() {
+  const { c } = useTheme();
   const { settings, update } = useSettings();
   const agent = useAgent();
   const [url, setUrl] = useState(settings.backendUrl);
 
   return (
-    <ScrollView contentContainerStyle={styles.page}>
-      <Text style={styles.label}>Backend URL</Text>
-      <TextInput
-        style={styles.input}
-        value={url}
-        onChangeText={setUrl}
-        autoCapitalize="none"
-        autoCorrect={false}
-        keyboardType="url"
-        onEndEditing={() => update({ backendUrl: url.trim() })}
-      />
-      <Text style={styles.help}>
-        {agent.connected ? `Connected · ${agent.model}` : 'Not connected'}. Simulator: http://localhost:8000. iPhone: http://&lt;laptop IP&gt;:8000.
-      </Text>
+    <>
+      <Stack.Toolbar placement="right">
+        <Stack.Toolbar.Button onPress={() => router.back()}>Done</Stack.Toolbar.Button>
+      </Stack.Toolbar>
+      <ScrollView style={{ backgroundColor: c.bg }} contentInsetAdjustmentBehavior="automatic" contentContainerStyle={styles.page}>
+        <ListSection
+          title="Appearance"
+          footer="Night is the default. Switch to Day when presenting on a projector.">
+          {/* The system segmented control (SwiftUI), so it gets the native Liquid Glass selection. */}
+          <View style={styles.segmented}>
+            <Host matchContents={{ vertical: true }}>
+              <Picker<AppearanceSetting>
+                selection={settings.appearance}
+                onSelectionChange={(appearance) => update({ appearance })}
+                modifiers={[pickerStyle('segmented')]}>
+                {APPEARANCE.map((a) => (
+                  <SwiftText key={a.id} modifiers={[tag(a.id)]}>
+                    {a.label}
+                  </SwiftText>
+                ))}
+              </Picker>
+            </Host>
+          </View>
+        </ListSection>
 
-      <View style={styles.row}>
-        <Text style={styles.label}>Read plans aloud</Text>
-        <Switch value={settings.speakReplies} onValueChange={(v) => update({ speakReplies: v })} trackColor={{ true: C.moss }} />
-      </View>
+        <ListSection title="Voice" inset={52}>
+          <ListRow
+            icon="speaker.wave.2"
+            title="Read plans aloud"
+            accessory={<Switch value={settings.speakReplies} onValueChange={(v) => update({ speakReplies: v })} trackColor={{ true: c.accent }} />}
+          />
+        </ListSection>
 
-      <Text style={styles.label}>Demo scenario</Text>
-      <View style={styles.options}>
-        {SCENARIOS.map((s) => (
-          <Pressable key={s.id} onPress={() => agent.setScenario(s.id)} style={[styles.option, agent.scenario === s.id && styles.optionOn]}>
-            <Text style={[styles.optionText, agent.scenario === s.id && { color: C.white }]}>{s.label}</Text>
-          </Pressable>
-        ))}
-      </View>
+        <ListSection title="Demo scenario" footer="Overrides the HKO warnings or AFCD closures on the server, so a no-go can be shown on cue. Results are labelled as demo overrides.">
+          {SCENARIOS.map((s) => (
+            <ListRow key={s.id} title={s.label} accessory={agent.scenario === s.id ? 'check' : undefined} onPress={() => agent.setScenario(s.id)} />
+          ))}
+        </ListSection>
 
-      <Pressable onPress={() => update({ sessionId: newSessionId() })} style={styles.danger}>
-        <Text style={styles.dangerText}>Start a new conversation</Text>
-      </Pressable>
-    </ScrollView>
+        <ListSection
+          title="Server"
+          footer={`Simulator: http://localhost:8000. iPhone: http://<laptop IP>:8000.`}>
+          <View style={styles.inputRow}>
+            <TextInput
+              style={[styles.input, { color: c.text, backgroundColor: c.surface2 }]}
+              value={url}
+              onChangeText={setUrl}
+              autoCapitalize="none"
+              autoCorrect={false}
+              keyboardType="url"
+              onEndEditing={() => update({ backendUrl: url.trim() })}
+              placeholderTextColor={c.text3}
+            />
+          </View>
+          <ListRow
+            leading={<View style={[styles.status, { backgroundColor: agent.connected ? c.accent : c.danger }]} />}
+            title={agent.connected ? 'Connected' : 'Not connected'}
+            value={agent.connected ? agent.model : undefined}
+          />
+        </ListSection>
+
+        <ListSection>
+          <ListRow
+            icon="square.and.pencil"
+            iconColor="danger"
+            tone="danger"
+            title="Start a new conversation"
+            onPress={() => {
+              agent.newConversation();
+              router.back();
+            }}
+          />
+        </ListSection>
+
+        <T v="caption" color="text3" center>
+          Trail data and photos: Agriculture, Fisheries and Conservation Department. Weather, warnings and sunset: Hong Kong Observatory.
+        </T>
+      </ScrollView>
+    </>
   );
 }
 
 const styles = StyleSheet.create({
-  page: { padding: 16, gap: 10, backgroundColor: C.paper, flexGrow: 1 },
-  label: { fontSize: 13, fontWeight: '700', color: C.ink, letterSpacing: 0.3 },
-  input: { backgroundColor: C.white, borderRadius: 10, borderWidth: 1, borderColor: C.line, padding: 12, fontSize: 15, color: C.ink },
-  help: { fontSize: 12, color: C.muted },
-  row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginVertical: 8 },
-  options: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  option: { borderWidth: 1.5, borderColor: C.ink, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 7 },
-  optionOn: { backgroundColor: C.ink },
-  optionText: { color: C.ink, fontWeight: '600' },
-  danger: { marginTop: 20, borderWidth: 1.5, borderColor: C.refuse, borderRadius: 10, padding: 12, alignItems: 'center' },
-  dangerText: { color: C.refuse, fontWeight: '700' },
+  page: { padding: 16, gap: 28, paddingBottom: 40 },
+  segmented: { padding: 12 },
+  inputRow: { padding: 12 },
+  input: { borderRadius: radius.control, paddingHorizontal: 12, paddingVertical: 11, fontSize: 16 },
+  status: { width: 10, height: 10, borderRadius: 5, marginHorizontal: 5 },
 });

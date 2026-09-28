@@ -10,8 +10,10 @@ const config: ExpoConfig = {
   orientation: 'portrait',
   icon: './assets/images/icon.png',
   scheme: 'trailhead',
-  userInterfaceStyle: 'light',
+  userInterfaceStyle: 'automatic', // Settings → Appearance overrides it at runtime (Night by default)
   ios: {
+    // Icon Composer bundle: iOS 26+ renders the mark as Liquid Glass, with dark and tinted variants.
+    icon: './assets/app.icon',
     bundleIdentifier: 'hk.comp4431.trailhead',
     supportsTablet: false,
     infoPlist: {
@@ -27,7 +29,7 @@ const config: ExpoConfig = {
   web: { output: 'static', favicon: './assets/images/favicon.png' },
   plugins: [
     'expo-router',
-    ['expo-splash-screen', { backgroundColor: '#14261f', image: './assets/images/splash-icon.png', imageWidth: 76 }],
+    ['expo-splash-screen', { backgroundColor: '#0E110F', image: './assets/images/splash-icon.png', imageWidth: 120 }],
     ['react-native-maps', { iosGoogleMapsApiKey: googleMapsKey }],
     [
       'expo-speech-recognition',

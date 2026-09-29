@@ -1,5 +1,8 @@
 // "Night trail": dark-first and photo-led, with one lime accent. "Day trail" (light) is for projectors.
 // Colour carries meaning: accent = go / the primary action / the primary route; caution, danger = safety.
+// `accent` is for fills and route lines; `accentInk` is the same meaning as text or an icon on a surface.
+// At night they're the same lime. By day lime only works as a fill under dark text (and as a route line
+// cased in ink), so text and icons take a forest green instead.
 import type { SFSymbol } from 'expo-symbols';
 import { useColorScheme, type TextStyle } from 'react-native';
 
@@ -12,6 +15,7 @@ const night = {
   text2: '#98A197',
   text3: '#687168',
   accent: '#B7E36B',
+  accentInk: '#B7E36B',
   onAccent: '#1B2410',
   accentSoft: 'rgba(183,227,107,0.14)',
   caution: '#FFC24B',
@@ -22,23 +26,28 @@ const night = {
   routeCase: '#0E110F',
 };
 
+// Day trail: a clear morning, not parchment. Cool mist-grey page, white cards, near-black ink with a green
+// undertone, and the same lime as Night, used the way trail blazes are: bright paint with dark type on it.
+// Warm tints (olive, khaki, brown amber) are kept out; they read as paper, not daylight. text, text2,
+// accentInk and the safety colours are at least 4.5:1 on every surface. Structure follows AllTrails' light tokens.
 const day: typeof night = {
-  bg: '#F4F6F3',
+  bg: '#F2F5F4',
   surface: '#FFFFFF',
-  surface2: '#EDF0EC',
-  separator: '#DDE2DC',
-  text: '#111512',
-  text2: '#5E675F',
-  text3: '#8A938B',
-  accent: '#4F7A12',
-  onAccent: '#FFFFFF',
-  accentSoft: 'rgba(79,122,18,0.12)',
-  caution: '#A86A00',
-  cautionSoft: 'rgba(168,106,0,0.12)',
-  danger: '#C4372B',
-  dangerSoft: 'rgba(196,55,43,0.10)',
-  info: '#1F6F99',
-  routeCase: '#FFFFFF',
+  surface2: '#E8ECEA',
+  separator: '#DCE1DE',
+  text: '#111A14',
+  text2: '#56615A',
+  text3: '#858F88',
+  accent: '#A2DE5A',
+  accentInk: '#2B751C',
+  onAccent: '#14200D',
+  accentSoft: '#E6F5D6',
+  caution: '#A84E00',
+  cautionSoft: '#FDEEDC',
+  danger: '#C8322A',
+  dangerSoft: '#FCE9E7',
+  info: '#1F6DB0',
+  routeCase: '#14200D',
 };
 
 export type Colors = typeof night;
@@ -110,7 +119,7 @@ export const REFUSAL_LABEL: Record<string, string> = {
 export function difficultyTone(d: string | undefined, c: Colors): { label: string; color: string } {
   switch (d) {
     case 'Easy':
-      return { label: 'Easy', color: c.accent };
+      return { label: 'Easy', color: c.accentInk };
     case 'Moderate':
       return { label: 'Moderate', color: c.info };
     case 'Demanding':

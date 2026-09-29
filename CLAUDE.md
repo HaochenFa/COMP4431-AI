@@ -81,7 +81,7 @@ Before calling a task done, run the relevant checks: `uv run pytest` for backend
 ## UI rules
 
 - **SF Symbols only** (`Icon` in `components/ui`); no emoji or Unicode glyphs as icons. Colour only through `useTheme()` tokens; no hex in screens.
-- **Accent (lime) means go / primary action / primary route.** Caution and danger are for safety states; tab bar and headers stay monochrome.
+- **Accent (lime) means go / primary action / primary route.** Caution and danger are for safety states; tab bar and headers stay monochrome. Use `accent` for fills (with `onAccent` text) and route lines (cased in `routeCase`), and `accentInk` for accent-coloured text, icons and thin lines. They're the same lime at night; by day `accentInk` is forest green, because lime text on white is unreadable.
 - **Liquid Glass (`Glass`) is for controls and navigation** (composer, action bars, map buttons, `GlassButton`, `SearchField`), never for content cards.
 - **Search uses `SearchField`, not `headerSearchBarOptions`**: the native header search is only glass once focused or scrolled, and the `integrated` placement squeezes it beside the toolbar buttons.
 - **The mark** (two peaks, trail cut into the saddle) is one path shared by `components/ui/logo.tsx`, `assets/images/icon.svg` and `assets/app.icon`. Don't put it on a tinted tile.

@@ -17,7 +17,7 @@ export function QuestionForm({ cards, answered, onSubmit }: { cards: QuestionCar
     const summary = answered.length ? answered.map((a) => (Array.isArray(a.value) ? a.value.join(', ') : a.value)).join(' · ') : 'Answered in the chat';
     return (
       <View style={styles.folded}>
-        <Icon name="checkmark.circle.fill" size={15} color="accent" />
+        <Icon name="checkmark.circle.fill" size={15} color="accentInk" />
         <T v="subhead" color="text2" style={styles.shrink} numberOfLines={2}>
           {summary}
         </T>
@@ -68,9 +68,9 @@ export function QuestionForm({ cards, answered, onSubmit }: { cards: QuestionCar
                         {opt}
                       </T>
                       {q.type === 'multi' ? (
-                        <Icon name={on ? 'checkmark.circle.fill' : 'circle'} size={20} color={on ? 'accent' : 'text3'} />
+                        <Icon name={on ? 'checkmark.circle.fill' : 'circle'} size={20} color={on ? 'accentInk' : 'text3'} />
                       ) : on ? (
-                        <Icon name="checkmark" size={16} weight="semibold" color="accent" />
+                        <Icon name="checkmark" size={16} weight="semibold" color="accentInk" />
                       ) : null}
                     </Press>
                   </Fragment>

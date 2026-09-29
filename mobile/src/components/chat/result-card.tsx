@@ -53,10 +53,10 @@ export function PlanResult({ plan, onOpen }: { plan: TripPlan; onOpen: () => voi
           </View>
         </View>
         <View style={[styles.footer, { borderTopColor: c.separator }]}>
-          <T v="subhead" color="accent" weight="600">
+          <T v="subhead" color="accentInk" weight="600">
             View plan
           </T>
-          <Icon name="chevron.right" size={12} weight="semibold" color="accent" />
+          <Icon name="chevron.right" size={12} weight="semibold" color="accentInk" />
         </View>
       </Card>
     </Press>

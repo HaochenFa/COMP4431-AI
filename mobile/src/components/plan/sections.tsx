@@ -70,7 +70,7 @@ export function SafetyChecks({ checks, plan }: { checks: ToolStep[]; plan?: Trip
             ? (['exclamationmark.triangle.fill', 'caution'] as const)
             : bad
               ? (['xmark.octagon.fill', 'danger'] as const)
-              : (['checkmark.circle.fill', 'accent'] as const);
+              : (['checkmark.circle.fill', 'accentInk'] as const);
         return (
           <ListRow
             key={s.name}
@@ -98,7 +98,7 @@ export function Timeline({ steps }: { steps: TripPlan['timeline'] }) {
             {s.start}–{s.end}
           </T>
           <View style={styles.rail}>
-            <View style={[styles.dot, { backgroundColor: i === 0 ? c.accent : c.text2 }]} />
+            <View style={[styles.dot, { backgroundColor: i === 0 ? c.accentInk : c.text2 }]} />
             {i < steps.length - 1 && <View style={[styles.line, { backgroundColor: c.separator }]} />}
           </View>
           <T v="body" style={styles.label}>

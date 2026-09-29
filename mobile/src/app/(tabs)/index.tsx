@@ -36,7 +36,7 @@ export default function Home() {
 
       <ListSection title="Ask Trailhead" inset={52}>
         {PROMPTS.map((p) => (
-          <ListRow key={p.text} icon={p.icon} iconColor="accent" title={p.title} subtitle={p.detail} accessory="chevron" onPress={() => ask(p.text)} />
+          <ListRow key={p.text} icon={p.icon} iconColor="accentInk" title={p.title} subtitle={p.detail} accessory="chevron" onPress={() => ask(p.text)} />
         ))}
       </ListSection>
 

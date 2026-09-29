@@ -52,7 +52,7 @@ export default function SettingsScreen() {
           <ListRow
             icon="speaker.wave.2"
             title="Read plans aloud"
-            accessory={<Switch value={settings.speakReplies} onValueChange={(v) => update({ speakReplies: v })} trackColor={{ true: c.accent }} />}
+            accessory={<Switch value={settings.speakReplies} onValueChange={(v) => update({ speakReplies: v })} trackColor={{ true: c.accentInk }} />}
           />
         </ListSection>
 
@@ -78,7 +78,7 @@ export default function SettingsScreen() {
             />
           </View>
           <ListRow
-            leading={<View style={[styles.status, { backgroundColor: agent.connected ? c.accent : c.danger }]} />}
+            leading={<View style={[styles.status, { backgroundColor: agent.connected ? c.accentInk : c.danger }]} />}
             title={agent.connected ? 'Connected' : 'Not connected'}
             value={agent.connected ? agent.model : undefined}
           />

@@ -49,7 +49,7 @@ export function ElevationChart({ profile, height = 132 }: { profile: ElevationPr
         <T v="footnote" color="text2">
           {at == null ? 'Elevation' : `${d[i].toFixed(1)} km`}
         </T>
-        <T v="footnote" color={at == null ? 'text3' : 'accent'} weight={at == null ? '400' : '600'} style={styles.tabular}>
+        <T v="footnote" color={at == null ? 'text3' : 'accentInk'} weight={at == null ? '400' : '600'} style={styles.tabular}>
           {at == null ? 'Drag to explore' : `${Math.round(e[i])} m`}
         </T>
       </View>
@@ -69,9 +69,9 @@ export function ElevationChart({ profile, height = 132 }: { profile: ElevationPr
               </Defs>
               <Line x1={0} x2={width} y1={height - 0.5} y2={height - 0.5} stroke={c.separator} strokeWidth={1} />
               <Path d={`${line}L${width},${height}L0,${height}Z`} fill="url(#elev)" />
-              <Path d={line} stroke={c.accent} strokeWidth={2} fill="none" strokeLinejoin="round" strokeLinecap="round" />
+              <Path d={line} stroke={c.accentInk} strokeWidth={2} fill="none" strokeLinejoin="round" strokeLinecap="round" />
               {at != null && <Line x1={x(d[i])} x2={x(d[i])} y1={0} y2={height} stroke={c.text2} strokeWidth={1} strokeDasharray="3 3" />}
-              <Circle cx={x(d[i])} cy={y(e[i])} r={4.5} fill={at == null ? c.text : c.accent} stroke={c.bg} strokeWidth={2} />
+              <Circle cx={x(d[i])} cy={y(e[i])} r={4.5} fill={at == null ? c.text : c.accentInk} stroke={c.bg} strokeWidth={2} />
             </Svg>
           )}
         </View>

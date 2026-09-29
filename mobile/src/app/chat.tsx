@@ -140,7 +140,7 @@ function Empty({ onPick }: { onPick: (text: string) => void }) {
       </T>
       <ListSection inset={52} style={styles.prompts}>
         {PROMPTS.map((p) => (
-          <ListRow key={p.text} icon={p.icon} iconColor="accent" title={p.title} subtitle={p.detail} onPress={() => onPick(p.text)} />
+          <ListRow key={p.text} icon={p.icon} iconColor="accentInk" title={p.title} subtitle={p.detail} onPress={() => onPick(p.text)} />
         ))}
       </ListSection>
     </View>

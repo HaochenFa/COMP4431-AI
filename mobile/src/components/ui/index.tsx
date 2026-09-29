@@ -233,7 +233,7 @@ export function ListRow({
       {accessory === 'chevron' ? (
         <Icon name="chevron.right" size={13} weight="semibold" color="text3" />
       ) : accessory === 'check' ? (
-        <Icon name="checkmark" size={16} weight="semibold" color="accent" />
+        <Icon name="checkmark" size={16} weight="semibold" color="accentInk" />
       ) : accessory === 'link' ? (
         <Icon name="arrow.up.right" size={13} weight="semibold" color="text3" />
       ) : (
@@ -315,7 +315,7 @@ export function Button({
   accessibilityLabel?: string;
 }) {
   const { c } = useTheme();
-  const [bg, fg] = { primary: [c.accent, c.onAccent], secondary: [c.surface2, c.text], ghost: ['transparent', c.accent] }[variant];
+  const [bg, fg] = { primary: [c.accent, c.onAccent], secondary: [c.surface2, c.text], ghost: ['transparent', c.accentInk] }[variant];
   return (
     <Press
       onPress={onPress}

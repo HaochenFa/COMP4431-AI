@@ -62,7 +62,7 @@ export function ActivityRow({ steps }: { steps: ToolStep[] }) {
             const meta = toolMeta(s.name);
             const status =
               s.status === 'ok'
-                ? (['checkmark', 'accent'] as const)
+                ? (['checkmark', 'accentInk'] as const)
                 : s.status === 'blocked'
                   ? (['hand.raised.fill', 'caution'] as const)
                   : s.status === 'error'

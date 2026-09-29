@@ -75,7 +75,7 @@ export function Composer({
         editable={!disabled}
         autoFocus={autoFocus}
         keyboardAppearance={dark ? 'dark' : 'light'}
-        selectionColor={c.accent}
+        selectionColor={c.accentInk}
       />
       {hasText ? (
         <Press onPress={onSend} disabled={disabled} style={[styles.round, { backgroundColor: c.accent }]} accessibilityLabel="Send">

@@ -38,3 +38,6 @@ mobile/android/
 
 .DS_Store
 backend/eval/results/
+
+# scripts/dev.sh logs
+.logs/

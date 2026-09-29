@@ -42,6 +42,12 @@ Trailhead is a pre-trip feasibility agent. You describe a hike loosely ("Saturda
 
 ## Run it
 
+Once everything below is set up, one command starts Ollama, the backend and Metro, and opens the app in the iOS Simulator. It builds the app only if the simulator doesn't have it yet, and Ctrl-C stops everything:
+
+```bash
+scripts/dev.sh              # --build after native changes, --profile <name>, --no-ollama, --device "<simulator>"
+```
+
 ### 1. Backend
 
 Requires Python 3.12 and [uv](https://docs.astral.sh/uv/).

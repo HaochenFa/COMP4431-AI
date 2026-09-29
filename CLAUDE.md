@@ -26,6 +26,8 @@ data/                 Frozen dataset from scripts/ingest_afcd.py: trails.json, t
 ## Commands
 
 ```bash
+scripts/dev.sh                                                # everything: Ollama :11435, backend :8000, Metro :8081, app in a simulator (boots one and opens Device Hub if needed; builds only if not installed; --build, --profile, --no-ollama)
+
 # backend (Python 3.12, uv)
 cd backend && uv run pytest                                   # offline: scripted fake model, stubbed feeds
 cd backend && uv run uvicorn app.main:app --host 0.0.0.0 --port 8000
@@ -99,6 +101,7 @@ Before calling a task done, run the relevant checks: `uv run pytest` for backend
   - Dates beyond 9 days return a non-error "no forecast yet".
   - The Very Hot Weather Warning is reported but isn't an automatic no-go (hike-safety decides EXTREME_HEAT).
 - **iOS 27 SDK requires the UIScene life cycle.** Expo 57's template doesn't adopt it, so `mobile/plugins/withSceneLifecycle.js` patches the generated AppDelegate + Info.plist to use Expo's `ExpoAppSceneDelegate` (mirrors the SDK 58 template). Remove the plugin when upgrading to SDK 58.
+- **Xcode 27 has no Simulator.app**: simulators are shown in Device Hub (`open -b com.apple.dt.Devices`). `scripts/dev.sh` boots the device with `simctl`, then opens Device Hub.
 - **Local HTTP clients here go through a SOCKS proxy.** Use `websockets.connect(..., proxy=None)` in scripts that call localhost.
 - **Ollama:**
   - Its OpenAI-compatible endpoint ignores `num_ctx`, so the context length must be set on the server (`scripts/ollama_serve.sh`); otherwise the ~4k-token prompt plus history is silently truncated.

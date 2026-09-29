@@ -1,4 +1,4 @@
-"""FastAPI entry point: WebSocket chat + a few REST helpers for the app."""
+"""FastAPI entry point: WebSocket chat, plus the REST helpers in rest.py and the AFCD photos."""
 
 from __future__ import annotations
 
@@ -7,19 +7,24 @@ import os
 from typing import Any
 
 from dotenv import load_dotenv
-from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi.staticfiles import StaticFiles
 
 load_dotenv()
 
 from .agent.harness import Agent  # noqa: E402  (after load_dotenv so keys are visible)
 from .agent.session import SessionStore  # noqa: E402
 from .llm.registry import build_provider  # noqa: E402
+from .rest import PHOTOS, build_router  # noqa: E402
 from .tools import data  # noqa: E402
 
 app = FastAPI(title="Trailhead - HK hiking agent")
 sessions = SessionStore()
 provider = build_provider()
 agent = Agent(provider)
+app.include_router(build_router(sessions, agent.toolbox))
+# check_dir=False: photos are optional (scripts/fetch_photos.py); the app falls back to route art.
+app.mount("/photos", StaticFiles(directory=PHOTOS, check_dir=False), name="photos")
 
 
 class _Connection:
@@ -42,14 +47,6 @@ live: dict[str, _Connection] = {}  # session id -> newest socket
 async def health() -> dict[str, Any]:
     return {"ok": True, "provider": provider.key, "model": provider.model, "trails": len(data.trails()),
             "profile": os.getenv("LLM_PROFILE", "default")}
-
-
-@app.get("/trails/{trail_id}")
-async def trail(trail_id: str) -> dict[str, Any]:
-    t = data.trails().get(trail_id)
-    if not t:
-        raise HTTPException(404, "unknown trail")
-    return {**t, "segments": data.geometries().get(trail_id, []), "profile": data.profiles().get(trail_id)}
 
 
 @app.websocket("/ws/chat")

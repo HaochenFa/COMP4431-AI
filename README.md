@@ -31,11 +31,13 @@ Trailhead is a pre-trip feasibility agent. You describe a hike loosely ("Saturda
   - AFCD *Closed Trails in Country Parks*.
   - HKO 9-day forecast, current warnings, and sunrise/sunset times.
   - Every live feed has a disk-snapshot fallback so the app still works offline.
-- **iOS app (Expo / React Native).**
-  - Full-screen Google terrain map showing the official tracks.
-  - Chat in a bottom sheet, like AllTrails.
-  - Plan and no-go cards with citations.
-- **Voice.** Hold the mic to speak your request (on-device speech recognition); the app reads the plan aloud (text-to-speech).
+- **iOS app (Expo / React Native), "Night trail" design.**
+  - Plan home: HKO outlook for today and the weekend (warnings first), suggested requests, recent plans.
+  - Full-screen chat: the agent's tool calls collapse to one line ("Checked 4 sources"), clarifying questions are tap-to-answer forms, and a plan arrives as a card that opens a full plan page.
+  - Plan page: official AFCD photo, stats, the safety checks the server enforces, a scrubbable elevation profile, the route map, sources, and one-tap follow-ups ("Shorter", "Less climbing").
+  - Trails tab: browse and search all 152 official trails, list or map, each with its own page and a "Plan this hike" hand-off to the agent.
+  - Native iOS: SF Symbols, Liquid Glass tab bar and controls, Apple Maps; dark by default, with a light mode for projectors (Settings → Appearance).
+- **Voice.** Tap the mic to speak your request (on-device speech recognition, live transcript); the app reads the plan aloud (text-to-speech).
 - **Demo scenarios.** Settings → Demo scenario injects a T8 signal, a red rainstorm, a thunderstorm or a trail closure, so a refusal can be shown on cue.
 
 ## Run it
@@ -87,10 +89,16 @@ Requires macOS, Xcode with an iOS Simulator runtime, and Node 20 or later.
 cd mobile
 npm install
 echo "GOOGLE_MAPS_IOS_KEY=..." > .env   # optional; without it the map falls back to Apple Maps
-npx expo run:ios                         # development build (Expo Go is not enough: maps + speech are native)
+LANG=en_US.UTF-8 npx expo run:ios       # development build (Expo Go is not enough: maps + speech are native)
 ```
 
-In the app, open ⚙︎ Settings and set the backend URL:
+The official AFCD trail photos (~50 MB, credited in the app) are committed in `data/photos/`; trails without one show their route instead. To refresh them:
+
+```bash
+uv --project backend run python scripts/fetch_photos.py
+```
+
+In the app, open Settings (gear on the Plan tab) and set the backend URL:
 - Simulator: `http://localhost:8000`
 - iPhone on the same Wi-Fi or hotspot: `http://<laptop IP>:8000`
 
@@ -98,8 +106,8 @@ In the app, open ⚙︎ Settings and set the backend URL:
 
 ```
 backend/   FastAPI app: app/llm (3 provider adapters + embeddings), app/agent (harness, session, prompts), app/tools, app/skills; eval/
-mobile/    Expo app: src/app (screens), src/components (map, chat sheet, cards, voice), src/lib (protocol, state)
-data/      trails.json, trails_raw.geojson, gpx/, snapshots/ (from scripts/ingest_afcd.py); knowledge.json (scripts/build_knowledge.py)
+mobile/    Expo app: src/app (tabs, chat, plan, trail, map, settings), src/components (ui, chat, trail, plan), src/lib (protocol, state, REST)
+data/      trails.json, trails_raw.geojson, gpx/, snapshots/ (from scripts/ingest_afcd.py); knowledge.json (scripts/build_knowledge.py); photos/ (scripts/fetch_photos.py)
 docs/      spec, architecture poster
 ```
 

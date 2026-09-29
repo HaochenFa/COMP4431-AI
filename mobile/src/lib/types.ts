@@ -63,6 +63,7 @@ export type Track = {
 };
 
 export type ToolStatus = 'start' | 'ok' | 'error' | 'blocked' | 'waiting';
+export type ToolStep = { call_id: string; name: string; status: ToolStatus; summary?: string; args?: Record<string, unknown> };
 
 export type ServerEvent =
   | {
@@ -95,8 +96,76 @@ export type ClientEvent =
 export type ChatItem =
   | { kind: 'user'; id: string; text: string; source: 'text' | 'voice' }
   | { kind: 'assistant'; id: string; text: string }
-  | { kind: 'tools'; id: string; steps: { call_id: string; name: string; status: ToolStatus; summary?: string }[] }
+  | { kind: 'tools'; id: string; steps: ToolStep[] }
   | { kind: 'ask'; id: string; call_id: string; cards: QuestionCard[]; answered?: CardAnswer[] }
   | { kind: 'plan'; id: string; plan: TripPlan }
   | { kind: 'refusal'; id: string; refusal: Refusal }
   | { kind: 'error'; id: string; message: string };
+
+// A plan or refusal kept on the device (lib/recent.tsx), with the safety checks that preceded it.
+export type Outcome =
+  | { id: string; kind: 'plan'; plan: TripPlan; checks: ToolStep[]; savedAt: number }
+  | { id: string; kind: 'refusal'; refusal: Refusal; checks: ToolStep[]; savedAt: number };
+
+// REST: backend/app/rest.py
+export type TrailSummary = {
+  id: string;
+  name: string;
+  trail: string;
+  section: number | null;
+  region: string;
+  difficulty: string;
+  start: string;
+  finish: string;
+  length_km: number | null;
+  hours: number | null;
+  stars: number | null;
+  ascent_m: number | null;
+  max_m: number | null;
+  start_coord: LatLng | null;
+  photo: boolean;
+  /** English names of landmarks the official (Chinese) description mentions, e.g. "Dragon's Back". */
+  landmarks: string[];
+};
+
+export type TrailDetail = {
+  id: string;
+  name: string;
+  name_zh?: string;
+  trail: string;
+  section: number | null;
+  type?: string;
+  region: string;
+  difficulty: string;
+  start: string;
+  finish: string;
+  length_km: number | null;
+  official_hours?: number;
+  stars?: number;
+  url?: string | null;
+  description_zh?: string;
+  segments: LatLng[][];
+  profile: ElevationProfile | null;
+  photo: boolean;
+  landmarks: string[];
+};
+
+export type ConditionsDay = {
+  date: string;
+  summary?: string | null;
+  max_c?: number | null;
+  min_c?: number | null;
+  rain?: string | null;
+  sunset?: string;
+  no_go?: string[];
+  error?: string;
+};
+
+/** An HKO warning in force (warnsum), keyed by type: WHOT, WTCSGNL, WRAIN… `issued` is absent for demo overrides. */
+export type Warning = { name?: string; code?: string; type?: string; issued?: string };
+
+export type Conditions = {
+  scenario: string;
+  warnings: Record<string, Warning>;
+  days: ConditionsDay[];
+};

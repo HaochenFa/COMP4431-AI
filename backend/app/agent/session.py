@@ -71,3 +71,7 @@ class SessionStore:
         if session_id not in self._sessions:
             self._sessions[session_id] = Session(session_id)
         return self._sessions[session_id]
+
+    def peek(self, session_id: str) -> Session | None:
+        """The session if it exists, without creating one."""
+        return self._sessions.get(session_id)

@@ -233,8 +233,9 @@ def register(box: ToolBox) -> None:
             out["warnings_apply_to"] = d.isoformat()
         else:
             warnsum, _ = await data.hko("warnsum", ttl=120)
-            warnings = {k: {"name": v.get("name"), "code": v.get("code"), "type": v.get("type")} for k, v in (warnsum or {}).items()
-                        if v.get("actionCode") != "CANCEL"}
+            warnings = {k: {"name": v.get("name"), "code": v.get("code"), "type": v.get("type"),
+                            **({"issued": v["issueTime"]} if v.get("issueTime") else {})}
+                        for k, v in (warnsum or {}).items() if v.get("actionCode") != "CANCEL"}
             applies = d <= today + timedelta(days=1)
             out["warnings_apply_to"] = "now (HKO issues warnings in real time; they apply to today and the next morning only)"
         out["warnings_in_force"] = warnings

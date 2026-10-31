@@ -34,7 +34,8 @@ export function ActivityRow({ steps }: { steps: ToolStep[] }) {
     );
   }
 
-  const done = shown.filter((s) => s.status === 'ok').length;
+  // Sources, not calls: three looks at the forecast are still one source.
+  const done = new Set(shown.filter((s) => s.status === 'ok').map((s) => s.name)).size;
   const checked = `Checked ${done} source${done === 1 ? '' : 's'}`;
   // A data source that failed is "unavailable"; a malformed present_plan/refuse is just returned to the model to fix.
   const down = failed.filter((s) => !toolMeta(s.name).hidden);
@@ -89,15 +90,15 @@ export function ActivityRow({ steps }: { steps: ToolStep[] }) {
   );
 }
 
-/** "Thinking" before the first tool or token arrives. */
-export function Thinking() {
+/** Shown while the agent has a turn going and no tool is running. */
+export function Thinking({ label }: { label: string }) {
   const { c } = useTheme();
   return (
     <View style={styles.header}>
       <ActivityIndicator size="small" color={c.text2} />
       <Pulse>
         <T v="subhead" color="text2">
-          Thinking…
+          {label}
         </T>
       </Pulse>
     </View>

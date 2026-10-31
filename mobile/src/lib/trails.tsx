@@ -3,12 +3,13 @@ import { createContext, useCallback, useContext, useEffect, useRef, useState, ty
 
 import { useAgent } from './agent';
 import { useSettings } from './settings';
-import type { Conditions, TrailDetail, TrailSummary } from './types';
+import type { Conditions, TrailClosure, TrailDetail, TrailSummary } from './types';
 
 // The official trail list and details over REST (backend/app/rest.py), cached for the session.
 type Ctx = {
   list: TrailSummary[] | null;
   byId: Record<string, TrailSummary>;
+  closures: Record<string, TrailClosure>;
   error: boolean;
   reload: () => void;
   detail: (id: string) => Promise<TrailDetail>;
@@ -21,9 +22,11 @@ const TrailsContext = createContext<Ctx | null>(null);
 
 export function TrailsProvider({ children }: { children: ReactNode }) {
   const { settings, ready } = useSettings();
+  const { scenario, connected } = useAgent();
   const base = settings.backendUrl.replace(/\/$/, '');
   const [list, setList] = useState<TrailSummary[] | null>(null);
   const [byId, setById] = useState<Record<string, TrailSummary>>({});
+  const [closures, setClosures] = useState<Record<string, TrailClosure>>({});
   const [error, setError] = useState(false);
   const [attempt, setAttempt] = useState(0);
   const details = useRef(new Map<string, { promise: Promise<TrailDetail>; value?: TrailDetail }>());
@@ -45,6 +48,19 @@ export function TrailsProvider({ children }: { children: ReactNode }) {
       live = false;
     };
   }, [base, ready, attempt]);
+
+  // Unlike the frozen dataset, closures change, and a demo scenario can add one.
+  useEffect(() => {
+    if (!ready) return;
+    let live = true;
+    fetch(`${base}/closures?session=${encodeURIComponent(settings.sessionId)}`)
+      .then((r) => (r.ok ? (r.json() as Promise<Record<string, TrailClosure>>) : Promise.reject(new Error(String(r.status)))))
+      .then((v) => live && setClosures(v))
+      .catch(() => {});
+    return () => {
+      live = false;
+    };
+  }, [base, ready, settings.sessionId, scenario, connected]);
 
   const detail = useCallback(
     (id: string) => {
@@ -77,7 +93,7 @@ export function TrailsProvider({ children }: { children: ReactNode }) {
 
   const reload = useCallback(() => setAttempt((n) => n + 1), []);
 
-  return <TrailsContext.Provider value={{ list, byId, error, reload, detail, cached, photo, base }}>{children}</TrailsContext.Provider>;
+  return <TrailsContext.Provider value={{ list, byId, closures, error, reload, detail, cached, photo, base }}>{children}</TrailsContext.Provider>;
 }
 
 export function useTrails() {

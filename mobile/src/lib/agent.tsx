@@ -12,6 +12,8 @@ type State = {
   scenario: string;
   model: string;
   lastOutcome: { kind: 'plan'; plan: TripPlan } | { kind: 'refusal'; refusal: Refusal } | null;
+  /** The last turn ended: the next text starts a new message, even with nothing between them. */
+  textDone: boolean;
 };
 
 type Action =
@@ -20,10 +22,18 @@ type Action =
   | { type: 'local_answer'; call_id: string; answers: CardAnswer[] }
   | { type: 'clear' };
 
-const initial: State = { items: [], tracks: [], busy: false, waitingFor: null, scenario: 'live', model: '', lastOutcome: null };
+const initial: State = { items: [], tracks: [], busy: false, waitingFor: null, scenario: 'live', model: '', lastOutcome: null, textDone: false };
 let seq = 0;
 // Unique across app launches: plan ids are persisted (lib/recent.tsx) and must not collide after a reload.
 const uid = () => `i${Date.now().toString(36)}${(++seq).toString(36)}`;
+
+/** A step whose finish went missing with a dropped connection would otherwise spin for ever. */
+const settle = (items: ChatItem[]): ChatItem[] =>
+  items.map((it) =>
+    it.kind === 'tools' && it.steps.some((s) => s.status === 'start')
+      ? { ...it, steps: it.steps.map((s) => (s.status === 'start' ? { ...s, status: 'ok' } : s)) }
+      : it,
+  );
 
 function reducer(state: State, action: Action): State {
   if (action.type === 'clear') return { ...initial, scenario: state.scenario, model: state.model };
@@ -51,21 +61,26 @@ function reducer(state: State, action: Action): State {
       // After a reconnect or app reload, re-show a question the server is still waiting on.
       const ask = ev.pending_ask;
       const shown = !ask || items.some((it) => it.kind === 'ask' && it.call_id === ask.call_id);
+      const next: ChatItem[] = shown ? items : [...items, { kind: 'ask', id: uid(), call_id: ask.call_id, cards: ask.cards }];
+      // We were waiting on a turn and the server no longer has it (it restarted): its reply is gone.
+      const lost = state.busy && !ev.running && !ev.waiting_for;
       return {
         ...state,
         scenario: ev.scenario,
         model: ev.model,
         waitingFor: ev.waiting_for,
-        items: shown ? items : [...items, { kind: 'ask', id: uid(), call_id: ask.call_id, cards: ask.cards }],
+        busy: ev.running,
+        items: lost ? [...settle(next), { kind: 'error', id: uid(), message: "The connection dropped before I finished. Please ask again." }] : next,
       };
     }
     case 'assistant_delta':
-      if (last?.kind === 'assistant') return { ...state, items: [...items.slice(0, -1), { ...last, text: last.text + ev.text }] };
-      return { ...state, items: [...items, { kind: 'assistant', id: uid(), text: ev.text }] };
+      if (last?.kind === 'assistant' && !state.textDone) return { ...state, items: [...items.slice(0, -1), { ...last, text: last.text + ev.text }] };
+      if (!ev.text.trim()) return state; // a stray newline between steps would be an empty bubble
+      return { ...state, textDone: false, items: [...items, { kind: 'assistant', id: uid(), text: ev.text }] };
     case 'assistant_reset':
       return last?.kind === 'assistant' ? { ...state, items: items.slice(0, -1) } : state;
     case 'assistant_done':
-      return { ...state, busy: false, waitingFor: ev.waiting_for ?? null };
+      return { ...state, busy: false, waitingFor: ev.waiting_for ?? null, textDone: true, items: settle(items) };
     case 'tool_trace': {
       // `args` arrive with the start event; later events for the same call keep them.
       const step: ToolStep = { call_id: ev.call_id, name: ev.name, status: ev.status, summary: ev.summary, ...(ev.args ? { args: ev.args } : {}) };
@@ -140,6 +155,14 @@ export function AgentProvider({ children }: { children: ReactNode }) {
   const [draft, setDraft] = useState('');
   const ws = useRef<WebSocket | null>(null);
   const saved = useRef(new Set<string>());
+  // Read by the socket's handlers, which outlive any one render.
+  const wantedScenario = useRef(settings.scenario);
+  const shownItems = useRef(0);
+
+  useEffect(() => {
+    wantedScenario.current = settings.scenario;
+    shownItems.current = state.items.length;
+  }, [settings.scenario, state.items.length]);
 
   useEffect(() => {
     if (!ready) return;
@@ -153,7 +176,20 @@ export function AgentProvider({ children }: { children: ReactNode }) {
       // A replaced socket (settings change, reconnect) can still fire late events: ignore them.
       const current = () => ws.current === socket;
       socket.onopen = () => current() && setConnected(true);
-      socket.onmessage = (m) => current() && dispatch({ type: 'server', event: JSON.parse(String(m.data)) as ServerEvent });
+      socket.onmessage = (m) => {
+        if (!current()) return;
+        const event = JSON.parse(String(m.data)) as ServerEvent;
+        if (event.type === 'hello') {
+          // The chat isn't kept across launches, so the server would be answering from a conversation nobody can see.
+          if (event.has_history && !event.running && !event.waiting_for && !shownItems.current) {
+            update({ sessionId: newSessionId() });
+            return;
+          }
+          // A new session or a restarted server starts on live data: the app is what remembers the demo scenario.
+          if (event.scenario !== wantedScenario.current) socket.send(JSON.stringify({ type: 'set_scenario', scenario: wantedScenario.current }));
+        }
+        dispatch({ type: 'server', event });
+      };
       socket.onclose = () => {
         if (!current()) return;
         setConnected(false);
@@ -168,12 +204,14 @@ export function AgentProvider({ children }: { children: ReactNode }) {
       clearTimeout(retry);
       ws.current?.close();
     };
-  }, [ready, settings.backendUrl, settings.sessionId]);
+  }, [ready, settings.backendUrl, settings.sessionId, update]);
 
   // Keep every plan and refusal on the device, with the checks that let it through the gate.
+  // (Not a question that wasn't about hiking: that's no trip decision to come back to.)
   useEffect(() => {
     for (const it of state.items) {
       if ((it.kind !== 'plan' && it.kind !== 'refusal') || saved.current.has(it.id)) continue;
+      if (it.kind === 'refusal' && it.refusal.code === 'OUT_OF_SCOPE') continue;
       saved.current.add(it.id);
       const base = { id: it.id, checks: checksBefore(state.items, it.id), savedAt: Date.now() };
       add(it.kind === 'plan' ? ({ ...base, kind: 'plan', plan: it.plan } satisfies Outcome) : { ...base, kind: 'refusal', refusal: it.refusal });
@@ -202,7 +240,10 @@ export function AgentProvider({ children }: { children: ReactNode }) {
     answer: (callId, answers) => {
       if (post({ type: 'card_answer', call_id: callId, answers })) dispatch({ type: 'local_answer', call_id: callId, answers });
     },
-    setScenario: (scenario) => post({ type: 'set_scenario', scenario }),
+    setScenario: (scenario) => {
+      update({ scenario }); // sent on the next hello if the socket is down
+      post({ type: 'set_scenario', scenario });
+    },
     newConversation: () => {
       setDraft('');
       update({ sessionId: newSessionId() });

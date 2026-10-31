@@ -1,5 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react';
 import { Appearance } from 'react-native';
 
 // Simulator reaches the laptop via localhost; a phone needs the laptop's LAN / hotspot IP (set in Settings).
@@ -9,7 +9,7 @@ const KEY = 'trailhead.settings.v1';
 /** Night trail is the default look; Day (light) is for projectors; System follows iOS. */
 export type AppearanceSetting = 'dark' | 'light' | 'system';
 
-export type Settings = { backendUrl: string; speakReplies: boolean; sessionId: string; appearance: AppearanceSetting };
+export type Settings = { backendUrl: string; speakReplies: boolean; sessionId: string; appearance: AppearanceSetting; scenario: string };
 
 type Ctx = { settings: Settings; update: (patch: Partial<Settings>) => void; ready: boolean };
 const SettingsContext = createContext<Ctx | null>(null);
@@ -27,6 +27,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     speakReplies: true,
     sessionId: newSessionId(),
     appearance: 'dark',
+    scenario: 'live',
   });
   const [ready, setReady] = useState(false);
 
@@ -44,7 +45,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     if (ready) AsyncStorage.setItem(KEY, JSON.stringify(settings)).catch(() => {});
   }, [ready, settings]);
 
-  const update = (patch: Partial<Settings>) => setSettings((s) => ({ ...s, ...patch }));
+  const update = useCallback((patch: Partial<Settings>) => setSettings((s) => ({ ...s, ...patch })), []);
 
   return <SettingsContext.Provider value={{ settings, update, ready }}>{children}</SettingsContext.Provider>;
 }

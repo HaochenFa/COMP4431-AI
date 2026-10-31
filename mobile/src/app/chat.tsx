@@ -1,6 +1,6 @@
 import { Stack, router, useLocalSearchParams } from 'expo-router';
-import { useEffect, useRef, useState } from 'react';
-import { FlatList, Keyboard, KeyboardAvoidingView, StyleSheet, View } from 'react-native';
+import { Fragment, useEffect, useRef, useState } from 'react';
+import { Dimensions, Keyboard, LayoutAnimation, ScrollView, StyleSheet, View, type NativeScrollEvent, type NativeSyntheticEvent } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ActivityRow, Thinking } from '@/components/chat/activity-row';
@@ -21,27 +21,41 @@ export default function Chat() {
   const agent = useAgent();
   const insets = useSafeAreaInsets();
   const { listen } = useLocalSearchParams<{ listen?: string }>();
-  const list = useRef<FlatList<ChatItem>>(null);
-  const [keyboard, setKeyboard] = useState(false);
+  // A ScrollView, not a FlatList: its scrollToEnd estimates from measured cells, so a plan that has just arrived stays below the fold.
+  const list = useRef<ScrollView>(null);
+  const [keyboard, setKeyboard] = useState(0);
+  // Follow new messages, unless the user has scrolled up to read.
+  const stick = useRef(true);
 
+  // The screen runs to the bottom edge, so the composer clears the keyboard by exactly its height. KeyboardAvoidingView
+  // goes through the header height instead, which is still a default when the keyboard rises during a push.
   useEffect(() => {
-    const show = Keyboard.addListener('keyboardWillShow', () => setKeyboard(true));
-    const hide = Keyboard.addListener('keyboardWillHide', () => setKeyboard(false));
-    return () => {
-      show.remove();
-      hide.remove();
-    };
+    const sub = Keyboard.addListener('keyboardWillChangeFrame', (e) => {
+      if (e.duration) LayoutAnimation.configureNext({ duration: e.duration, update: { type: 'keyboard' } });
+      setKeyboard(Math.max(Dimensions.get('window').height - e.endCoordinates.screenY, 0));
+    });
+    return () => sub.remove();
   }, []);
 
   const send = (text: string, source: 'text' | 'voice' = 'text') => {
+    stick.current = true;
     if (agent.send(text, source)) agent.setDraft('');
+  };
+
+  const stickIfAtEnd = ({ nativeEvent: e }: NativeSyntheticEvent<NativeScrollEvent>) => {
+    stick.current = e.contentSize.height - e.contentOffset.y - e.layoutMeasurement.height < 96;
+  };
+
+  const follow = () => {
+    if (agent.items.length && stick.current) list.current?.scrollToEnd({ animated: true });
   };
 
   const last = agent.items[agent.items.length - 1];
   const toolRunning = last?.kind === 'tools' && last.steps.some((s) => s.status === 'start');
-  const thinking = agent.busy && !toolRunning && last?.kind !== 'assistant';
+  // Text can stop well before the turn does: a plan is written out after the last sentence.
+  const thinking = agent.busy && !toolRunning;
 
-  const renderItem = ({ item }: { item: ChatItem }) => {
+  const renderItem = (item: ChatItem) => {
     switch (item.kind) {
       case 'user':
         return (
@@ -57,7 +71,16 @@ export default function Chat() {
       case 'tools':
         return <ActivityRow steps={item.steps} />;
       case 'ask':
-        return <QuestionForm cards={item.cards} answered={item.answered} onSubmit={(a) => agent.answer(item.call_id, a)} />;
+        return (
+          <QuestionForm
+            cards={item.cards}
+            answered={item.answered}
+            onSubmit={(a) => {
+              stick.current = true;
+              agent.answer(item.call_id, a);
+            }}
+          />
+        );
       case 'plan':
         return <PlanResult plan={item.plan} onOpen={() => router.push(`/plan/${item.id}`)} />;
       case 'refusal':
@@ -80,21 +103,22 @@ export default function Chat() {
       <Stack.Toolbar placement="right">
         <Stack.Toolbar.Button icon="square.and.pencil" onPress={agent.newConversation} accessibilityLabel="New conversation" />
       </Stack.Toolbar>
-      <KeyboardAvoidingView behavior="padding" style={[styles.flex, { backgroundColor: c.bg }]}>
-        <FlatList
+      <View style={[styles.flex, { backgroundColor: c.bg }]}>
+        <ScrollView
           ref={list}
-          data={agent.items}
-          keyExtractor={(i) => i.id}
-          renderItem={renderItem}
           contentInsetAdjustmentBehavior="automatic"
           contentContainerStyle={styles.list}
           keyboardDismissMode="interactive"
           keyboardShouldPersistTaps="handled"
-          onContentSizeChange={() => agent.items.length && list.current?.scrollToEnd({ animated: true })}
-          ListEmptyComponent={<Empty onPick={(t) => send(t)} />}
-          ListFooterComponent={thinking ? <Thinking /> : null}
-        />
-        <View style={[styles.composer, { paddingBottom: keyboard ? 8 : Math.max(insets.bottom, 12) }]}>
+          onScrollBeginDrag={() => (stick.current = false)}
+          onScrollEndDrag={stickIfAtEnd}
+          onMomentumScrollEnd={stickIfAtEnd}
+          onContentSizeChange={follow}
+          onLayout={follow}>
+          {agent.items.length ? agent.items.map((item) => <Fragment key={item.id}>{renderItem(item)}</Fragment>) : <Empty onPick={(t) => send(t)} />}
+          {thinking ? <Thinking label={agent.connected ? 'Thinking…' : 'Reconnecting…'} /> : null}
+        </ScrollView>
+        <View style={[styles.composer, { paddingBottom: keyboard ? keyboard + 8 : Math.max(insets.bottom, 12) }]}>
           <Composer
             value={agent.draft}
             onChange={agent.setDraft}
@@ -106,7 +130,7 @@ export default function Chat() {
             autoFocus={Boolean(agent.draft) && listen !== '1'}
           />
         </View>
-      </KeyboardAvoidingView>
+      </View>
     </>
   );
 }

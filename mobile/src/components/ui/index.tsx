@@ -250,7 +250,7 @@ export function ListRow({
   );
 }
 
-type Tone = 'neutral' | 'accent' | 'caution' | 'danger' | 'info' | 'glass' | 'stop';
+type Tone = 'neutral' | 'accent' | 'caution' | 'danger' | 'info' | 'glass' | 'stop' | 'hold';
 
 export function Chip({
   label,
@@ -278,6 +278,7 @@ export function Chip({
         info: [c.surface2, c.info],
         glass: ['rgba(0,0,0,0.45)', '#FFFFFF'],
         stop: [c.danger, dark ? c.bg : '#FFFFFF'], // solid no-go, legible over photos
+        hold: [c.caution, dark ? c.bg : '#FFFFFF'], // solid provisional, likewise
       }[tone];
   const content = (
     <>

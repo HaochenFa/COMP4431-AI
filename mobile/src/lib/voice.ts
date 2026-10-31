@@ -1,6 +1,8 @@
 import * as Haptics from 'expo-haptics';
+import * as Speech from 'expo-speech';
 import { ExpoSpeechRecognitionModule, useSpeechRecognitionEvent } from 'expo-speech-recognition';
 import { useRef, useState } from 'react';
+import { Alert, Linking } from 'react-native';
 
 // Same accent as the spoken replies (expo-speech en-GB), which suits Hong Kong English.
 export const SPEECH_LANG = 'en-GB';
@@ -30,14 +32,23 @@ export function useVoice({ onFinal }: { onFinal: (text: string) => void }) {
     setTranscript(text.current);
   });
   useSpeechRecognitionEvent('volumechange', (e) => setLevel(Math.min(Math.max((e.value + 2) / 12, 0), 1)));
-  useSpeechRecognitionEvent('error', () => {
+  useSpeechRecognitionEvent('error', (e) => {
     setListening(false);
     setLevel(0);
+    // Saying nothing and discarding aren't failures.
+    if (e.error !== 'aborted' && e.error !== 'no-speech') Alert.alert("Voice didn't work", 'Try again, or type instead.');
   });
 
   const start = async () => {
+    Speech.stop(); // or the app talks over the user and hears itself
     const perm = await ExpoSpeechRecognitionModule.requestPermissionsAsync();
-    if (!perm.granted) return false;
+    if (!perm.granted) {
+      Alert.alert('Voice is off', 'Allow the microphone and speech recognition for Trailhead in Settings, or type instead.', [
+        { text: 'Not now', style: 'cancel' },
+        { text: 'Open Settings', onPress: () => Linking.openSettings() },
+      ]);
+      return false;
+    }
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
     cancelled.current = false;
     text.current = '';

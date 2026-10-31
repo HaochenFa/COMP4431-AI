@@ -22,7 +22,7 @@ class TrailPick(BaseModel):
     id: str
     name: str
     length_km: float
-    hours: float = Field(description="Official walking time from get_trail / search_trails")
+    hours: float = Field(description="Walking time from search_trails / get_trail, copied exactly")
     stars: int | None = Field(default=None, ge=1, le=5, description="Official overall rating; null when the data has none")
 
 
@@ -32,27 +32,29 @@ class WhyNot(BaseModel):
 
 
 class TimelineStep(BaseModel):
-    label: str = Field(description="e.g. 'MTR to Shau Kei Wan + bus 9', 'Hike', 'Bus back'")
+    label: str = Field(description="e.g. 'Travel to To Tei Wan (approx.)', 'Hike', 'Travel home (approx.)'. No route numbers: there is no transport data")
     start: str = Field(description="HH:MM", pattern=HHMM)
     end: str = Field(description="HH:MM", pattern=HHMM)
 
 
 class TripPlan(BaseModel):
+    # Required fields first, in this order: some models stop mid-object after why_not, and everything
+    # after the required ones can be left out. The server fills the weather and the official sources in.
     decision: Literal["go"] = "go"
     date: str = Field(description="YYYY-MM-DD")
     primary: TrailPick
-    backup: TrailPick | None = None
-    why_this: str
-    why_not: list[WhyNot] = []
     timeline: list[TimelineStep] = Field(min_length=1)
-    finish_time: str = Field(description="HH:MM end of the hike step in the timeline (hike start + official hours)", pattern=HHMM)
+    finish_time: str = Field(description="HH:MM end of the hike step in the timeline (hike start + walking hours)", pattern=HHMM)
     sunset: str = Field(description="HH:MM from get_daylight", pattern=HHMM)
-    weather_summary: str
-    citations: list[Citation]
+    why_this: str
+    backup: TrailPick | None = None
+    why_not: list[WhyNot] = []
+    weather_summary: str = Field(default="", description="Leave empty: the server writes it from get_weather")
+    citations: list[Citation] = Field(default=[], description="Only hiking.gov.hk description passages behind a scenery claim; the server adds the trail, HKO and closure sources")
 
 
 RefusalCode = Literal[
-    "CLOSED", "WARNING_T8", "RAINSTORM", "THUNDERSTORM", "EXTREME_HEAT", "EXCEEDS_ABILITY", "AFTER_DARK", "INSUFFICIENT_TIME", "OUT_OF_SCOPE"
+    "CLOSED", "WARNING_T8", "RAINSTORM", "THUNDERSTORM", "LANDSLIP", "EXTREME_HEAT", "EXCEEDS_ABILITY", "AFTER_DARK", "INSUFFICIENT_TIME", "OUT_OF_SCOPE"
 ]
 
 

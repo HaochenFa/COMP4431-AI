@@ -3,18 +3,26 @@ import { StyleSheet, View } from 'react-native';
 import { Card, Press, T } from '@/components/ui';
 import { difficultyTone, radius, useTheme } from '@/constants/theme';
 import { fmtHours, fmtKm, trailRoute, trailTitle } from '@/lib/format';
+import { useTrails } from '@/lib/trails';
 import type { TrailSummary } from '@/lib/types';
 
 import { TrailImage } from './trail-image';
 
-/** Difficulty as a coloured dot plus the word, then the numbers. */
+/** Difficulty as a coloured dot plus the word, then the numbers. A closure comes first. */
 export function TrailMeta({ t }: { t: TrailSummary }) {
   const { c } = useTheme();
+  const { closures } = useTrails();
   const d = difficultyTone(t.difficulty, c);
+  const closure = closures[t.id];
   return (
     <View style={styles.meta}>
-      <View style={[styles.dot, { backgroundColor: d.color }]} />
+      <View style={[styles.dot, { backgroundColor: closure?.closed ? c.danger : d.color }]} />
       <T v="footnote" color="text2" style={styles.tabular} numberOfLines={1}>
+        {closure?.closed ? (
+          <T v="footnote" color="danger" weight="600">
+            {closure.partial ? 'Partly closed · ' : 'Closed · '}
+          </T>
+        ) : null}
         {d.label} · {fmtKm(t.length_km)} km · {fmtHours(t.hours)}
         {t.ascent_m != null ? ` · ${t.ascent_m} m climb` : ''}
       </T>

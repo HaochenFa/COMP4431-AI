@@ -19,8 +19,9 @@ export default function TrailPage() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { c } = useTheme();
   const agent = useAgent();
-  const { byId } = useTrails();
+  const { byId, closures } = useTrails();
   const { trail, failed } = useTrailDetail(id);
+  const closure = closures[id];
   const [more, setMore] = useState(false);
   const y = useSharedValue(0);
   const onScroll = useAnimatedScrollHandler((e) => {
@@ -66,6 +67,27 @@ export default function TrailPage() {
           badge={<Chip tone="glass" label={trail.region} icon="mappin.and.ellipse" />}
         />
         <View style={styles.body}>
+          {closure?.closed ? (
+            <ListSection inset={52}>
+              <ListRow
+                icon="xmark.octagon.fill"
+                iconColor="danger"
+                title={closure.partial ? 'Partly closed by AFCD' : 'Closed by AFCD'}
+                subtitle={[closure.effective && `Since ${closure.effective}`, closure.expected_expiry].filter(Boolean).join(' · ')}
+                subtitleLines={2}
+              />
+            </ListSection>
+          ) : closure?.diversion ? (
+            <ListSection inset={52}>
+              <ListRow
+                icon="arrow.triangle.branch"
+                iconColor="caution"
+                title="Temporary diversion"
+                subtitle={closure.diversion.note}
+                subtitleLines={2}
+              />
+            </ListSection>
+          ) : null}
           <View style={styles.tags}>
             <View style={[styles.dot, { backgroundColor: diff.color }]} />
             <T v="subhead" color="text2" style={styles.flex}>
@@ -109,7 +131,7 @@ export default function TrailPage() {
                 <TrailMap
                   tracks={[{ id: trail.id, name: trail.name, role: 'primary', segments: trail.segments }]}
                   interactive={false}
-                  padding={{ top: 30, right: 30, bottom: 30, left: 30 }}
+                  padding={{ top: 30, right: 30, bottom: 56, left: 30 }}
                   style={styles.preview}
                 />
                 <View style={styles.expand}>
@@ -145,7 +167,17 @@ export default function TrailPage() {
         </View>
       </Animated.ScrollView>
       <ActionBar>
-        <Button title="Plan this hike" icon="figure.hiking" onPress={plan} style={styles.flex} />
+        {closure?.closed ? (
+          <Button
+            title="Find an alternative"
+            icon="arrow.triangle.branch"
+            variant="secondary"
+            onPress={() => askAbout(`${trail.name} is closed. What's a similar trail I can do instead?`)}
+            style={styles.flex}
+          />
+        ) : (
+          <Button title="Plan this hike" icon="figure.hiking" onPress={plan} style={styles.flex} />
+        )}
       </ActionBar>
     </View>
   );

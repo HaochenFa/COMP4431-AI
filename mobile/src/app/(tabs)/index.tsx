@@ -1,6 +1,7 @@
 import { router } from 'expo-router';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
+import { Badges, DemoChip, PlanChip } from '@/components/plan/sections';
 import { TrailImage } from '@/components/trail/trail-image';
 import { Card, Chip, GlassButton, Icon, ListRow, ListSection, Press, SectionTitle, T } from '@/components/ui';
 import { shortDate, useTheme } from '@/constants/theme';
@@ -18,7 +19,10 @@ export default function Home() {
   const ask = useAsk();
   const { recent } = useRecent();
   const now = new Date();
-  const weekend = now.getDay() === 0 || now.getDay() === 6;
+  const evening = now.getHours() >= 18; // the next hike is tomorrow's
+  const day = (now.getDay() + (evening ? 1 : 0)) % 7;
+  const weekend = day === 0 || day === 6;
+  const title = !weekend ? 'Where to this weekend?' : evening ? 'Where to tomorrow?' : 'Where to today?';
 
   return (
     <ScrollView style={{ backgroundColor: c.bg }} contentInsetAdjustmentBehavior="automatic" contentContainerStyle={styles.page}>
@@ -29,7 +33,7 @@ export default function Home() {
         <GlassButton icon="gearshape" onPress={() => router.push('/settings')} accessibilityLabel="Settings" />
       </View>
       <T v="largeTitle" style={styles.title}>
-        {weekend ? 'Where to today?' : 'Where to this weekend?'}
+        {title}
       </T>
 
       <Outlook />
@@ -56,6 +60,17 @@ export default function Home() {
       </T>
     </ScrollView>
   );
+}
+
+const afterSunset = (sunset?: string, now = new Date()) => {
+  const [h, m] = (sunset ?? '').split(':').map(Number);
+  return h >= 0 && now.getHours() * 60 + now.getMinutes() > h * 60 + m;
+};
+
+/** "Sat", or "Next Sat" when it's a week off: on a Saturday the columns are today, Sunday and the next Saturday. */
+function dayLabel(date: string, today: string) {
+  const name = shortDate(date).split(' ')[0];
+  return Date.parse(date) - Date.parse(today) >= 7 * 86400000 ? `Next ${name}` : name;
 }
 
 /** Today and the weekend from HKO, under the active demo scenario. Warnings in force lead, each with what it means on a trail. */
@@ -101,10 +116,12 @@ function Outlook() {
       <View style={styles.days}>
         {conditions.days.map((d, i) => {
           const noGo = Boolean(d.no_go?.length);
+          const tonight = i === 0 && afterSunset(d.sunset); // HKO's text has moved on to tonight and tomorrow
+          const label = i > 0 ? dayLabel(d.date, conditions.days[0].date) : tonight ? 'Tonight' : 'Today';
           return (
-            <View key={d.date} style={styles.day} accessible accessibilityLabel={`${i === 0 ? 'Today' : shortDate(d.date)}: ${noGo ? 'no-go' : (d.summary ?? '')}`}>
+            <View key={d.date} style={styles.day} accessible accessibilityLabel={`${label}: ${noGo ? 'no-go' : (d.summary ?? '')}`}>
               <T v="caption" color="text2">
-                {i === 0 ? 'Today' : shortDate(d.date).split(' ')[0]}
+                {label}
               </T>
               {noGo && noGoIcon ? (
                 <Icon name={noGoIcon} size={28} color="danger" mode="hierarchical" />
@@ -117,7 +134,7 @@ function Outlook() {
               <View style={styles.row}>
                 <Icon name="sunset.fill" size={12} color="text3" />
                 <T v="caption" color="text2" style={styles.tabular}>
-                  {d.sunset ?? '–'}
+                  {tonight ? '–' : (d.sunset ?? '–')}
                 </T>
               </View>
             </View>
@@ -148,7 +165,10 @@ function RecentCard({ o }: { o: Outcome }) {
       {id ? (
         <TrailImage id={id} size="thumb" style={styles.recentImage}>
           <View style={styles.badge}>
-            {o.kind === 'plan' ? <Chip tone="accent" icon="checkmark" label="Go" /> : <Chip tone="glass" icon="hand.raised.fill" label="No-go" />}
+            <Badges>
+              {o.kind === 'plan' ? <PlanChip plan={o.plan} date={false} /> : <Chip tone="stop" icon="hand.raised.fill" label="No-go" />}
+              <DemoChip scenario={o.kind === 'plan' ? o.plan.scenario : o.refusal.scenario} />
+            </Badges>
           </View>
         </TrailImage>
       ) : (
@@ -184,5 +204,5 @@ const styles = StyleSheet.create({
   recentImage: { width: 200, height: 125, borderRadius: 14, borderCurve: 'continuous', marginBottom: 6 },
   noImage: { alignItems: 'center', justifyContent: 'center' },
   recentTitle: { minHeight: 40 },
-  badge: { position: 'absolute', top: 8, left: 8 },
+  badge: { position: 'absolute', top: 8, left: 8, right: 8 },
 });

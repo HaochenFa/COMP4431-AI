@@ -17,27 +17,8 @@ from .tools import data
 from .tools.base import ToolBox, ToolContext
 
 PHOTOS = DATA / "photos"
-_TODAY_MAX = re.compile(r"maximum temperature will be (?:about|around) (\d+) degrees", re.I)
-
-
-# English names for landmarks the official (Chinese) descriptions mention, so the app's trail search finds
-# "Dragon's Back" (港島徑第八段 never says it in English). Only names that mean one place: 大浪灣 and 西灣 are
-# each two different bays, so they're left out.
-LANDMARKS = {
-    "龍脊": "Dragon's Back", "獅子山": "Lion Rock", "大帽山": "Tai Mo Shan", "鳳凰山": "Lantau Peak",
-    "大東山": "Sunset Peak", "馬鞍山": "Ma On Shan", "八仙嶺": "Pat Sin Leng", "飛鵝山": "Kowloon Peak",
-    "太平山": "Victoria Peak", "蚺蛇尖": "Sharp Peak", "釣魚翁": "High Junk Peak", "紫羅蘭山": "Violet Hill",
-    "孖崗山": "The Twins", "針山": "Needle Hill", "草山": "Grassy Hill", "望夫石": "Amah Rock",
-    "筆架山": "Beacon Hill", "九龍坑山": "Cloudy Hill", "大老山": "Tate's Cairn", "柏架山": "Mount Parker",
-    "渣甸山": "Jardine's Lookout", "畢拿山": "Mount Butler", "水牛山": "Buffalo Hill",
-    "城門水塘": "Shing Mun Reservoir", "萬宜水庫": "High Island Reservoir", "昂坪": "Ngong Ping", "大澳": "Tai O",
-    "荔枝窩": "Lai Chi Wo",
-}
-
-
-def _landmarks(t: dict[str, Any]) -> list[str]:
-    text = (t.get("name_zh") or "") + (t.get("description_zh") or "")
-    return [en for zh, en in LANDMARKS.items() if zh in text]
+# HKO writes both "The maximum temperature will be around 33 degrees" and "a maximum temperature of around 28 degrees".
+_TODAY_MAX = re.compile(r"maximum temperature (?:will be |of )?(?:about |around )?(\d+) degrees", re.I)
 
 
 def _start(tid: str) -> list[float] | None:
@@ -84,9 +65,18 @@ def build_router(sessions: SessionStore, toolbox: ToolBox) -> APIRouter:
                 "max_m": prof.get("max_m"),
                 "start_coord": _start(t["id"]),
                 "photo": _has_photo(t["id"]),
-                "landmarks": _landmarks(t),
+                "landmarks": data.landmarks(t),
+                "search_zh": [n for n in (t.get("name_zh"), *data.landmarks_zh(t)) if n],
             })
         return out
+
+    @router.get("/closures")
+    async def closures(session: str = "default") -> dict[str, Any]:
+        """trail id -> closed / partial / diversion, from the same check the agent runs, under the session's demo scenario."""
+        live = sessions.peek(session)
+        scratch = Session(f"closures:{session}", scenario=live.scenario if live else "live")
+        out = await toolbox.tools["check_closures"].handler({"ids": list(data.trails())}, ToolContext(scratch, emit=_noop, call_id="closures"))
+        return {tid: entry for tid, entry in out.content["trails"].items() if entry["closed"] or entry.get("diversion")}
 
     @router.get("/trails/{trail_id}")
     async def trail(trail_id: str) -> dict[str, Any]:
@@ -94,7 +84,7 @@ def build_router(sessions: SessionStore, toolbox: ToolBox) -> APIRouter:
         if not t:
             raise HTTPException(404, "unknown trail")
         return {**t, "segments": data.geometries().get(trail_id, []), "profile": data.profiles().get(trail_id),
-                "photo": _has_photo(trail_id), "landmarks": _landmarks(t)}
+                "photo": _has_photo(trail_id), "landmarks": data.landmarks(t)}
 
     @router.get("/conditions")
     async def conditions(session: str = "default") -> dict[str, Any]:
@@ -112,7 +102,7 @@ def build_router(sessions: SessionStore, toolbox: ToolBox) -> APIRouter:
             day: dict[str, Any] = {"date": d.isoformat()}
             try:
                 w = await toolbox.tools["get_weather"].handler({"date": d.isoformat()}, ctx)
-                if not w.is_error and isinstance(w.content, dict):
+                if isinstance(w.content, dict):  # also with no forecast: warnings in force still count
                     f = w.content.get("forecast") or {}
                     summary = f.get("weather") or f.get("desc")
                     day.update(summary=summary, max_c=f.get("max_c"), min_c=f.get("min_c"),

@@ -1,12 +1,13 @@
-import { Fragment, useState } from 'react';
+import { useState } from 'react';
 import { StyleSheet, TextInput, View } from 'react-native';
 
-import { Button, Card, Icon, Press, T, hairline } from '@/components/ui';
+import { Button, Icon, Press, T } from '@/components/ui';
 import { radius, useTheme } from '@/constants/theme';
 import type { CardAnswer, QuestionCard } from '@/lib/types';
 
 /**
  * The agent's clarifying questions as a short form (tap, don't type), kept visually apart from its answers.
+ * Options wrap as chips, so three questions and Continue fit on one screen.
  * Once answered it folds to one line; typing in the composer instead answers it too.
  */
 export function QuestionForm({ cards, answered, onSubmit }: { cards: QuestionCard[]; answered?: CardAnswer[]; onSubmit: (a: CardAnswer[]) => void }) {
@@ -56,27 +57,24 @@ export function QuestionForm({ cards, answered, onSubmit }: { cards: QuestionCar
               onChangeText={(t) => setValues((p) => ({ ...p, [q.id]: t }))}
             />
           ) : (
-            <Card>
-              {(q.options ?? []).map((opt, i) => {
+            <View style={styles.options}>
+              {(q.options ?? []).map((opt) => {
                 const v = values[q.id];
                 const on = Array.isArray(v) ? v.includes(opt) : v === opt;
                 return (
-                  <Fragment key={opt}>
-                    {i > 0 && <View style={[styles.rule, { backgroundColor: c.separator }]} />}
-                    <Press onPress={() => toggle(q, opt)} style={styles.option} accessibilityRole={q.type === 'single' ? 'radio' : 'checkbox'} accessibilityState={{ checked: on }}>
-                      <T v="body" style={styles.shrink}>
-                        {opt}
-                      </T>
-                      {q.type === 'multi' ? (
-                        <Icon name={on ? 'checkmark.circle.fill' : 'circle'} size={20} color={on ? 'accentInk' : 'text3'} />
-                      ) : on ? (
-                        <Icon name="checkmark" size={16} weight="semibold" color="accentInk" />
-                      ) : null}
-                    </Press>
-                  </Fragment>
+                  <Press
+                    key={opt}
+                    onPress={() => toggle(q, opt)}
+                    style={[styles.option, { backgroundColor: on ? c.text : c.surface2 }]}
+                    accessibilityRole={q.type === 'single' ? 'radio' : 'checkbox'}
+                    accessibilityState={{ checked: on }}>
+                    <T v="subhead" color={on ? c.bg : c.text}>
+                      {opt}
+                    </T>
+                  </Press>
                 );
               })}
-            </Card>
+            </View>
           )}
         </View>
       ))}
@@ -92,8 +90,9 @@ const styles = StyleSheet.create({
   form: { gap: 16, paddingVertical: 6 },
   question: { gap: 8 },
   input: { borderRadius: radius.control + 2, paddingHorizontal: 14, paddingVertical: 12, fontSize: 17 },
-  option: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 16, minHeight: 48 },
-  rule: { height: hairline, marginLeft: 16 },
+  options: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  // The same size selected or not: a tap must not reflow the options under the finger.
+  option: { justifyContent: 'center', paddingHorizontal: 14, minHeight: 44, borderRadius: 22, borderCurve: 'continuous', maxWidth: '100%' },
   folded: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 4 },
   shrink: { flexShrink: 1, flexGrow: 1 },
 });

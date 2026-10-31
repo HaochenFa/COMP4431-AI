@@ -3,17 +3,20 @@
 import asyncio
 import json
 import shutil
+import time
 from datetime import timedelta
 
 import httpx
 import pytest
+from fastapi.testclient import TestClient
 
-from app import cache
-from app.agent.harness import Agent
-from app.agent.session import Session
+from app import cache, main
+from app.agent.harness import EMERGENCY_LINE, Agent
+from app.agent.session import LEDGER_TTL_S, Session
 from app.llm.base import Completion, Message, ToolCall
 from app.paths import SNAPSHOTS
-from app.tools import data
+from app.schemas import TripPlan
+from app.tools import agentic, data
 from app.tools.base import ToolOutput, obj
 
 from .fakes import ScriptedProvider
@@ -208,27 +211,40 @@ async def test_pending_question_keeps_its_cards():
     assert session.pending.cards == cards["cards"]
 
 
-async def test_scenario_warning_applies_to_the_requested_date():
+async def test_scenario_warning_covers_the_coming_days_only():
     provider = ScriptedProvider([
-        [ToolCall("c1", "check_closures", {"ids": ["hk_8"]}), ToolCall("c2", "get_weather", {"date": LATER})],
-        [ToolCall("c3", "refuse", refusal_args("WARNING_T8", ["hk_8"], LATER))],
+        [ToolCall("c1", "check_closures", {"ids": ["hk_8"]}), ToolCall("c2", "get_weather", {"date": DAY}),
+         ToolCall("c3", "get_weather", {"date": LATER})],
+        [ToolCall("c4", "refuse", refusal_args("WARNING_T8", ["hk_8"], DAY))],
         "Not this weekend.",
     ])
     agent, session = Agent(provider), Session("s")
     await run(agent, session, {"type": "set_scenario", "scenario": "t8"})
     events = await run(agent, session, {"type": "user_message", "text": "Saturday?"})
-    weather = next(e for e in events if e["type"] == "tool_trace" and e["name"] == "get_weather" and e["status"] == "ok")
+    weather = next(e for e in events if e["type"] == "tool_trace" and e.get("call_id") == "c2" and e["status"] == "ok")
     assert weather["summary"] == "WARNING TC8NE"
-    assert any(e["type"] == "refusal" for e in events)
+    assert session.ledger.no_go[DAY] == ["TC8NE"] and LATER not in session.ledger.no_go  # a later date can be the alternative
+    refusal = next(e["refusal"] for e in events if e["type"] == "refusal")
+    assert refusal["scenario"] == "t8"  # labelled wherever the app shows it
+
+
+def warnings_now(*codes, **forecast_for):
+    """An hko() stub with these warnings in force and a fine forecast for every date in the window."""
+    keys = {"TC8NE": "WTCSGNL", "WTS": "WTS", "WRAINR": "WRAIN", "WL": "WL", "WFNTSA": "WFNTSA"}
+
+    async def hko(data_type, **kw):
+        if data_type == "warnsum":
+            return {keys[c]: {"name": c, "code": c, "actionCode": "ISSUE"} for c in codes}, {}
+        if data_type == "flw":
+            return {"forecastDesc": forecast_for.get("today", "Mainly fine."), "outlook": forecast_for.get("outlook", "")}, {}
+        days = [data.today_hk() + timedelta(days=i) for i in range(1, 10)]
+        return {"weatherForecast": [{"forecastDate": d.strftime("%Y%m%d"), "forecastWeather": "Fine"} for d in days]}, {}
+
+    return hko
 
 
 async def test_live_warnings_do_not_apply_to_later_dates(monkeypatch):
-    async def hko_with_t8(data_type, **kw):
-        if data_type == "warnsum":
-            return {"WTCSGNL": {"name": "Tropical Cyclone Warning Signal", "code": "TC8NE", "actionCode": "ISSUE"}}, {}
-        return {"weatherForecast": []}, {}
-
-    monkeypatch.setattr(data, "hko", hko_with_t8)
+    monkeypatch.setattr(data, "hko", warnings_now("TC8NE"))
     provider = ScriptedProvider([
         [ToolCall("c1", "check_closures", {"ids": ["hk_8"]}), ToolCall("c2", "get_weather", {"date": LATER})],
         [ToolCall("c3", "refuse", refusal_args("WARNING_T8", ["hk_8"], LATER))],
@@ -238,6 +254,139 @@ async def test_live_warnings_do_not_apply_to_later_dates(monkeypatch):
     weather = next(e for e in events if e["type"] == "tool_trace" and e["name"] == "get_weather" and e["status"] == "ok")
     assert "WARNING" not in weather["summary"]
     assert "REFUSAL_NOT_SUPPORTED_BY_TOOLS" in results_of(provider, 2)["c3"].content
+
+
+async def weather_for(date):
+    session = Session("s")
+    provider = ScriptedProvider([[ToolCall("w", "get_weather", {"date": date})], "ok"])
+    await run(Agent(provider), session, {"type": "user_message", "text": "weather?"})
+    return json.loads(results_of(provider, 1)["w"].content), session
+
+
+TOMORROW = (data.today_hk() + timedelta(days=1)).isoformat()
+TODAY = data.today_hk().isoformat()
+
+
+@pytest.mark.parametrize("code, on, no_go", [
+    ("WTS", TODAY, ["WTS"]),
+    ("WTS", TOMORROW, []),  # a thunderstorm warning is good for hours: the forecast decides tomorrow
+    ("WRAINR", TODAY, ["WRAINR"]),
+    ("WRAINR", TOMORROW, []),
+    ("TC8NE", TOMORROW, ["TC8NE"]),
+    ("WL", TODAY, ["WL"]),
+    ("WL", TOMORROW, ["WL"]),  # slopes stay saturated
+    ("WFNTSA", TODAY, []),  # reported, for the model to act on
+])
+async def test_each_warning_reaches_as_far_as_it_should(monkeypatch, code, on, no_go):
+    monkeypatch.setattr(data, "hko", warnings_now(code))
+    content, session = await weather_for(on)
+    assert content["no_go_warnings"] == no_go and session.ledger.no_go[on] == no_go
+    assert list(content["warnings_in_force"].values())[0]["code"] == code
+
+
+async def test_todays_outlook_for_later_days_does_not_block_today(monkeypatch):
+    monkeypatch.setattr(data, "hko", warnings_now(today="Mainly fine.", outlook="Showers will be heavy at times on Tuesday."))
+    _, session = await weather_for(TODAY)
+    assert session.ledger.forecast[TODAY] == "Mainly fine."
+
+
+async def test_a_date_with_no_forecast_is_not_checked(monkeypatch):
+    async def stale(data_type, **kw):
+        return ({}, {}) if data_type == "warnsum" else ({"weatherForecast": []}, {"stale": True})
+
+    monkeypatch.setattr(data, "hko", stale)
+    provider = ScriptedProvider([
+        [ToolCall("k1", "check_closures", {"ids": ["hk_8"]}), ToolCall("k2", "get_weather", {"date": DAY}),
+         ToolCall("k3", "get_daylight", {"date": DAY})],
+        [ToolCall("p1", "present_plan", plan_args())],
+        "I can't check the weather right now.",
+    ])
+    session = Session("s")
+    events = await run(Agent(provider), session, {"type": "user_message", "text": "plan"})
+    assert DAY not in session.ledger.weather_dates
+    assert results_of(provider, 1)["k2"].is_error
+    assert not any(e["type"] == "plan" for e in events) and "PRECONDITION_FAILED" in results_of(provider, 2)["p1"].content
+    summary = next(e["summary"] for e in events if e["type"] == "tool_trace" and e.get("call_id") == "k2" and e["status"] == "error")
+    assert summary == "forecast unavailable"
+
+
+async def test_clear_scenario_plans_with_no_live_forecast(monkeypatch):
+    async def stale(data_type, **kw):
+        return ({}, {}) if data_type == "warnsum" else ({"weatherForecast": []}, {"stale": True})
+
+    monkeypatch.setattr(data, "hko", stale)
+    session = Session("s")
+    session.set_scenario("clear")
+    provider = ScriptedProvider([[ToolCall("w", "get_weather", {"date": TOMORROW})], "ok"])
+    await run(Agent(provider), session, {"type": "user_message", "text": "weather?"})
+    assert TOMORROW in session.ledger.weather_dates and "demo override" in session.ledger.forecast[TOMORROW]
+
+
+@pytest.mark.parametrize("forecast", [
+    "Heavy rain at first.",
+    "Rainstorm expected.",
+    "Showers will be heavy at times.",
+    "Rain will be heavy at times.",
+    "Occasional heavy showers and squally thunderstorms.",
+    "Heavy showers and a few squally thunderstorms.",
+    "Frequent heavy squally showers.",
+])
+async def test_every_way_of_saying_heavy_rain_blocks_a_plan(monkeypatch, forecast):
+    async def wet(data_type, ttl=600, endpoint="weather.php", **params):
+        if data_type == "fnd":
+            return {"weatherForecast": [{"forecastDate": DAY.replace("-", ""), "forecastWeather": forecast}]}, {}
+        if data_type == "SRS":
+            return {"fields": ["YYYY-MM-DD", "RISE", "TRAN.", "SET"], "data": [[DAY, "06:13", "12:15", "18:16"]]}, {}
+        return {}, {}
+
+    monkeypatch.setattr(data, "hko", wet)
+    provider = ScriptedProvider([
+        CHECKS,
+        [ToolCall("p1", "present_plan", plan_args())],
+        [ToolCall("r1", "refuse", refusal_args("RAINSTORM", ["hk_8"]))],
+        "Not that day.",
+    ])
+    events = await run(Agent(provider), Session("s"), {"type": "user_message", "text": "plan"})
+    assert "UNSAFE_PLAN" in results_of(provider, 2)["p1"].content
+    assert [e["refusal"]["code"] for e in events if e["type"] == "refusal"] == ["RAINSTORM"]  # the code stands up too
+
+
+@pytest.mark.parametrize("forecast", ["Mainly fine.", "A few showers.", "Cloudy with light rain. Heavy fog offshore."])
+def test_ordinary_forecasts_are_not_heavy_rain(forecast):
+    assert not agentic.HEAVY_RAIN.search(forecast)
+
+
+async def test_landslip_warning_means_a_landslip_refusal(monkeypatch):
+    monkeypatch.setattr(data, "hko", warnings_now("WL"))
+    provider = ScriptedProvider([
+        [ToolCall("k1", "check_closures", {"ids": ["hk_8"]}), ToolCall("k2", "get_weather", {"date": TOMORROW})],
+        [ToolCall("r1", "refuse", refusal_args("LANDSLIP", ["hk_8"], TOMORROW))],
+        "Not tomorrow.",
+    ])
+    events = await run(Agent(provider), Session("s"), {"type": "user_message", "text": "go?"})
+    assert [e["refusal"]["code"] for e in events if e["type"] == "refusal"] == ["LANDSLIP"]
+
+
+async def test_out_of_scope_cannot_be_used_to_skip_the_gate():
+    bad = {**refusal_args("OUT_OF_SCOPE", ["hk_8"], "2026-01-01")}
+    provider = ScriptedProvider([[ToolCall("r1", "refuse", bad)], "That date has passed. Which day?"])
+    events = await run(Agent(provider), Session("s"), {"type": "user_message", "text": "Dragon's Back last January"})
+    assert not any(e["type"] == "refusal" for e in events)
+    assert "OUT_OF_SCOPE can't name trails" in results_of(provider, 1)["r1"].content
+
+
+async def test_real_out_of_scope_needs_no_checks():
+    provider = ScriptedProvider([[ToolCall("r1", "refuse", refusal_args("OUT_OF_SCOPE", []))], "Sorry."])
+    events = await run(Agent(provider), Session("s"), {"type": "user_message", "text": "best dim sum?"})
+    assert [e["refusal"]["code"] for e in events if e["type"] == "refusal"] == ["OUT_OF_SCOPE"]
+
+
+async def test_past_date_tells_the_model_what_to_do():
+    past = (data.today_hk() - timedelta(days=3)).isoformat()
+    provider = ScriptedProvider([[ToolCall("w", "get_weather", {"date": past})], "That date has passed."])
+    await run(Agent(provider), Session("s"), {"type": "user_message", "text": "hike last week"})
+    result = results_of(provider, 1)["w"]
+    assert result.is_error and "ask for a new date" in result.content
 
 
 async def test_switching_scenario_invalidates_earlier_checks():
@@ -275,10 +424,12 @@ async def test_refusal_codes_need_evidence(args, problem):
 
 @pytest.mark.parametrize("over, problem", [
     ({"finish_time": "17:50", "timeline": [{"label": "Hike", "start": "15:05", "end": "17:50"}]}, "less than 30 min before sunset"),
-    ({"finish_time": "11:30", "timeline": [{"label": "Hike", "start": "09:30", "end": "11:30"}]}, "shorter than the official 2.75 h"),
+    ({"finish_time": "11:30", "timeline": [{"label": "Hike", "start": "09:30", "end": "11:30"}]}, "shorter than the 2.75 h walking time"),
     ({"finish_time": "13:00"}, "must be the end of the hike step"),
     ({"primary": {"id": "hk_8", "name": "x", "length_km": 8.5, "hours": 2.75, "stars": 1}}, "stars 1 != official 3"),
-    ({"primary": {"id": "cty_35", "name": "x", "length_km": 1.0, "hours": 1.0}}, "no official walking time"),
+    ({"primary": {"id": "cty_35", "name": "x", "length_km": 3.5, "hours": 9.0}}, "hours 9.0 != estimated"),
+    ({"timeline": [{"label": "Bus 9 to Shek O", "start": "08:30", "end": "09:15"}, {"label": "Hike", "start": "09:30", "end": "12:15"}]}, "names a transport route"),
+    ({"why_this": "Take minibus 16 to the start."}, "names a transport route"),
 ])
 async def test_plan_figures_and_timing_are_checked(over, problem):
     ids = [over["primary"]["id"]] if "primary" in over else ["hk_8"]
@@ -300,6 +451,111 @@ async def test_plan_card_carries_official_name_and_start():
     assert card["primary"]["name"] == t["name"] and card["primary"]["start"] == t["start"]
     assert card["primary"]["start_coord"] == data.geometries()["hk_8"][0][0]
     assert card["primary"]["profile"]["ascent_m"] == data.profiles()["hk_8"]["ascent_m"]
+
+
+async def test_plan_needs_only_its_core_fields_and_the_server_fills_the_rest():
+    args = plan_args(why_this="Sea views\\u2014and a ridge.")
+    for optional in ("weather_summary", "citations"):
+        del args[optional]
+    provider = ScriptedProvider([CHECKS, [ToolCall("p1", "present_plan", args)], "Enjoy."])
+    events = await run(Agent(provider), Session("s"), {"type": "user_message", "text": "plan"})
+    card = next(e["plan"] for e in events if e["type"] == "plan")
+    assert card["weather_summary"] == "Fine" and card["provisional"] is False and "scenario" not in card
+    assert [c["source"] for c in card["citations"]][1:] == ["HKO forecast", "HKO sunrise/sunset", "AFCD closed trails"]
+    assert card["citations"][0]["ref"] == data.trails()["hk_8"]["url"]
+    assert card["why_this"] == "Sea views—and a ridge."  # a double-escaped dash doesn't reach the card
+
+
+def test_a_stopped_plan_needs_no_more_than_the_required_fields():
+    # Models have stopped right after why_not: everything from there on has to be optional.
+    fields = list(TripPlan.model_fields)
+    assert set(TripPlan.model_json_schema()["required"]) == {"date", "primary", "timeline", "finish_time", "sunset", "why_this"}
+    assert fields.index("why_this") < fields.index("backup") < fields.index("why_not") < fields.index("citations")
+
+
+async def test_a_card_sent_twice_in_parallel_shows_once():
+    provider = ScriptedProvider([
+        CHECKS,
+        [ToolCall("p1", "present_plan", plan_args()), ToolCall("p2", "present_plan", plan_args())],
+        "Enjoy.",
+    ])
+    events = await run(Agent(provider), Session("s"), {"type": "user_message", "text": "plan"})
+    assert len([e for e in events if e["type"] == "plan"]) == 1
+    assert not results_of(provider, 2)["p2"].is_error
+
+
+async def test_a_rejected_parallel_card_does_not_stop_the_valid_one():
+    bad = plan_args(finish_time="13:00")
+    provider = ScriptedProvider([CHECKS, [ToolCall("p1", "present_plan", bad), ToolCall("p2", "present_plan", plan_args())], "Enjoy."])
+    events = await run(Agent(provider), Session("s"), {"type": "user_message", "text": "plan"})
+    assert len([e for e in events if e["type"] == "plan"]) == 1
+
+
+async def test_plan_beyond_the_forecast_is_provisional():
+    far = (data.today_hk() + timedelta(days=20)).isoformat()
+
+    async def srs(data_type, ttl=600, endpoint="weather.php", **params):
+        return {"fields": ["YYYY-MM-DD", "RISE", "TRAN.", "SET"], "data": [[far, "06:13", "12:15", "18:16"]]}, {}
+
+    data_hko, data.hko = data.hko, srs
+    try:
+        provider = ScriptedProvider([
+            [ToolCall("k1", "check_closures", {"ids": ["hk_8"]}), ToolCall("k2", "get_weather", {"date": far}),
+             ToolCall("k3", "get_daylight", {"date": far})],
+            [ToolCall("p1", "present_plan", plan_args(date=far))],
+            "Check nearer the date.",
+        ])
+        events = await run(Agent(provider), Session("s"), {"type": "user_message", "text": "plan"})
+    finally:
+        data.hko = data_hko
+    card = next(e["plan"] for e in events if e["type"] == "plan")
+    assert card["provisional"] is True and card["weather_summary"] == "No HKO forecast yet for this date"
+    assert "re-checked" in results_of(provider, 2)["p1"].content
+
+
+async def test_trail_without_official_time_can_be_planned_with_an_estimate():
+    t = data.trails()["oth_3"]  # Pak Tam Chung Wheel Chair Trail
+    hours, estimated = data.walking_hours(t)
+    assert estimated and hours == 0.25
+    primary = {"id": "oth_3", "name": t["name"], "length_km": t["length_km"], "hours": hours}
+    provider = ScriptedProvider([
+        [ToolCall("k1", "check_closures", {"ids": ["oth_3"]}), *CHECKS[1:]],
+        [ToolCall("p1", "present_plan", plan_args(primary=primary))],
+        "It's a short, step-free loop.",
+    ])
+    events = await run(Agent(provider), Session("s"), {"type": "user_message", "text": "wheelchair"})
+    card = next(e["plan"] for e in events if e["type"] == "plan")
+    assert card["primary"]["hours_estimated"] is True and "estimated" in card["citations"][0]["quote"]
+
+
+async def test_checks_expire_when_a_conversation_is_picked_up_later():
+    provider = ScriptedProvider([CHECKS, "Checked.", [ToolCall("p1", "present_plan", plan_args())], "Let me check again."])
+    agent, session = Agent(provider), Session("s")
+    await run(agent, session, {"type": "user_message", "text": "check"})
+    session.last_active -= LEDGER_TTL_S + 1
+    events = await run(agent, session, {"type": "user_message", "text": "plan it"})
+    assert not any(e["type"] == "plan" for e in events)
+    assert "PRECONDITION_FAILED" in results_of(provider, 3)["p1"].content
+    assert session.ledger.sunset[DAY] == "18:16"  # sunsets don't change
+
+
+@pytest.mark.parametrize("text, line", [
+    ("My friend fell on Lion Rock and can't move her leg", True),
+    ("I think I broke my ankle", True),
+    ("Someone is unconscious on the trail!", True),
+    ("A half-day hike on Saturday", False),
+])
+async def test_emergency_line_goes_out_before_the_model_answers(text, line):
+    events = await run(Agent(ScriptedProvider(["Call 999."])), Session("s"), {"type": "user_message", "text": text})
+    first = events[0]
+    assert (first == {"type": "assistant_delta", "text": EMERGENCY_LINE}) is line
+
+
+async def test_scenario_change_does_not_wait_for_a_running_turn():
+    session = Session("s")
+    async with session.lock:  # a turn is running
+        await asyncio.wait_for(run(Agent(ScriptedProvider([])), session, {"type": "set_scenario", "scenario": "t8"}), 1)
+    assert session.scenario == "t8"
 
 
 async def test_map_keeps_multipart_tracks_as_separate_segments():
@@ -337,6 +593,29 @@ def test_elevation_profiles_come_from_the_official_gpx():
     assert len(hk8["d_km"]) == len(hk8["ele_m"]) <= 130
     assert 250 < hk8["ascent_m"] < 400 and hk8["max_m"] == 284  # Dragon's Back ridge, hysteresis-smoothed
     assert "cty_1" not in prof and "oth_20" not in prof  # GPX without heights; no GPX at all
+
+
+def test_gpx_nodata_is_not_elevation():
+    prof = data.profiles()
+    assert prof["oth_30"]["ascent_m"] < 100 and prof["oth_30"]["min_m"] >= -5  # was a 10,025 m climb on a 0.7 km trail
+    assert all(-20 <= p["min_m"] and p["max_m"] <= 957 for p in prof.values())
+
+
+@pytest.mark.parametrize("text, tid", [
+    ("Dragon", "hk_8"), ("Sunset Peak", "lt_2"), ("Sharp Peak", "mc_2"), ("Twin Peaks", "ws_1"),
+    ("Lion Rock", "mc_5"), ("獅子山", "mc_5"), ("Tai Mo Shan", "mc_8"), ("港島徑", "hk_8"),
+])
+async def test_trails_can_be_searched_by_landmark_and_in_chinese(text, tid):
+    provider = ScriptedProvider([[ToolCall("s", "search_trails", {"text": text, "limit": 25})], "ok"])
+    await run(Agent(provider), Session("s"), {"type": "user_message", "text": "find"})
+    assert tid in [t["id"] for t in json.loads(results_of(provider, 1)["s"].content)["trails"]]
+
+
+def test_landmarks_skip_trails_that_only_compare_with_them():
+    trails = data.trails()
+    assert "Victoria Peak" not in data.landmarks(trails["ws_4"]) and "Victoria Peak" in data.landmarks(trails["hk_1"])
+    assert "Sharp Peak" not in data.landmarks(trails["cty_13"])
+    assert "High Island Reservoir" not in data.landmarks(trails["cty_31"])
 
 
 async def test_trail_tools_carry_elevation():
@@ -442,3 +721,24 @@ async def test_plans_on_no_go_days_or_closed_trails_are_blocked(scenario, over, 
     assert not any(e["type"] == "plan" for e in events)
     result = results_of(provider, 2)["p1"].content
     assert "UNSAFE_PLAN" in result and problem in result
+
+
+def test_a_reconnect_is_told_about_the_turn_and_gets_what_it_missed(monkeypatch):
+    class SlowAgent:
+        async def handle(self, session, event, emit):
+            async with session.lock:
+                await asyncio.sleep(0.2)  # the socket goes away here
+                await emit({"type": "assistant_delta", "text": "Hello"})
+                await emit({"type": "assistant_done"})
+
+    monkeypatch.setattr(main, "agent", SlowAgent())
+    with TestClient(main.app) as client:  # one event loop, so the turn outlives the first socket
+        with client.websocket_connect("/ws/chat?session=dropped") as ws:
+            assert ws.receive_json()["running"] is False
+            ws.send_json({"type": "user_message", "text": "hi"})
+        time.sleep(0.5)
+        with client.websocket_connect("/ws/chat?session=dropped") as ws:
+            assert ws.receive_json()["running"] is True
+            assert [ws.receive_json()["type"] for _ in range(2)] == ["assistant_delta", "assistant_done"]
+        with client.websocket_connect("/ws/chat?session=dropped") as ws:
+            assert ws.receive_json()["running"] is False  # delivered once

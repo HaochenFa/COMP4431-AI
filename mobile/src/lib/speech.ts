@@ -1,5 +1,5 @@
 import * as Speech from 'expo-speech';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 
 import { useAgent } from './agent';
 import { useSettings } from './settings';
@@ -10,7 +10,7 @@ import { SPEECH_LANG } from './voice';
 export function speakOutcome(o: { kind: 'plan'; plan: TripPlan } | { kind: 'refusal'; refusal: Refusal }) {
   const line =
     o.kind === 'plan'
-      ? `Go. ${o.plan.primary.name}. ${o.plan.primary.hours} hours. Finish around ${o.plan.finish_time}, sunset ${o.plan.sunset}.`
+      ? `${o.plan.provisional ? 'Provisional, check the weather nearer the date' : 'Go'}. ${o.plan.primary.name}. ${o.plan.primary.hours} hours. Finish around ${o.plan.finish_time}, sunset ${o.plan.sunset}.`
       : `No go. ${o.refusal.summary}${o.refusal.counterfactual ? ` Instead: ${o.refusal.counterfactual}` : ''}`;
   Speech.stop();
   Speech.speak(line, { language: SPEECH_LANG, rate: 1.0 });
@@ -20,7 +20,10 @@ export function speakOutcome(o: { kind: 'plan'; plan: TripPlan } | { kind: 'refu
 export function useSpeakOutcomes() {
   const { lastOutcome } = useAgent();
   const { settings } = useSettings();
+  const spoken = useRef(lastOutcome);
   useEffect(() => {
+    if (lastOutcome === spoken.current) return; // turning the setting on doesn't replay the last plan
+    spoken.current = lastOutcome;
     if (lastOutcome && settings.speakReplies) speakOutcome(lastOutcome);
   }, [lastOutcome, settings.speakReplies]);
 }

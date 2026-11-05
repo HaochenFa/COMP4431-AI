@@ -3,11 +3,13 @@ import { GlassView, isLiquidGlassAvailable } from 'expo-glass-effect';
 import { SymbolView, type SFSymbol, type SymbolType, type SymbolWeight } from 'expo-symbols';
 import { Children, Fragment, type ReactNode } from 'react';
 import {
+  PlatformColor,
   Pressable,
   StyleSheet,
   Text,
   TextInput,
   View,
+  type ColorValue,
   type PressableProps,
   type StyleProp,
   type TextProps,
@@ -18,7 +20,7 @@ import {
 import { radius, type, useTheme, type Colors, type TypeVariant } from '@/constants/theme';
 
 type ColorName = keyof Colors;
-const pick = (c: Colors, color: ColorName | string) => (color in c ? c[color as ColorName] : color);
+const pick = (c: Colors, color: ColorName | ColorValue) => (typeof color === 'string' && color in c ? c[color as ColorName] : color);
 
 export function T({
   v = 'body',
@@ -41,7 +43,7 @@ export function Icon({
 }: {
   name: SFSymbol;
   size?: number;
-  color?: ColorName | string;
+  color?: ColorName | ColorValue;
   weight?: SymbolWeight;
   mode?: SymbolType;
 }) {
@@ -94,28 +96,40 @@ export function GlassButton({
   );
 }
 
-/** Search as a Liquid Glass capsule, like the composer: one look whether it's idle, focused or scrolled. */
+/**
+ * Search as a Liquid Glass capsule, like the composer: one look whether it's idle, focused or scrolled.
+ * Its text and icons use the system label colours, as a native search bar does: the glass turns light or dark with
+ * what scrolls under it, and they follow it, so a query stays readable over a photo or another row's text.
+ * With `onPress` it is a button that opens a search elsewhere, looking the same.
+ */
 export function SearchField({
   value,
   onChangeText,
   placeholder,
   style,
+  autoFocus,
+  onPress,
 }: {
   value: string;
   onChangeText: (text: string) => void;
   placeholder: string;
   style?: StyleProp<ViewStyle>;
+  autoFocus?: boolean;
+  onPress?: () => void;
 }) {
-  const { c, dark } = useTheme();
-  return (
+  const { dark } = useTheme();
+  const field = (
     <Glass interactive style={[styles.search, style]}>
-      <Icon name="magnifyingglass" size={16} weight="medium" color="text2" />
+      <Icon name="magnifyingglass" size={16} weight="medium" color={PlatformColor('secondaryLabel')} />
       <TextInput
+        editable={!onPress}
+        pointerEvents={onPress ? 'none' : 'auto'}
+        autoFocus={autoFocus}
         value={value}
         onChangeText={onChangeText}
         placeholder={placeholder}
-        placeholderTextColor={c.text3}
-        style={[styles.searchInput, { color: c.text }]}
+        placeholderTextColor={PlatformColor('placeholderText')}
+        style={[styles.searchInput, { color: PlatformColor('label') }]}
         returnKeyType="search"
         autoCorrect={false}
         autoCapitalize="none"
@@ -124,10 +138,17 @@ export function SearchField({
       />
       {value ? (
         <Pressable onPress={() => onChangeText('')} hitSlop={10} accessibilityRole="button" accessibilityLabel="Clear search">
-          <Icon name="xmark.circle.fill" size={17} color="text3" />
+          <Icon name="xmark.circle.fill" size={17} color={PlatformColor('tertiaryLabel')} />
         </Pressable>
       ) : null}
     </Glass>
+  );
+  return onPress ? (
+    <Pressable onPress={onPress} accessibilityRole="search" accessibilityLabel={placeholder}>
+      {field}
+    </Pressable>
+  ) : (
+    field
   );
 }
 

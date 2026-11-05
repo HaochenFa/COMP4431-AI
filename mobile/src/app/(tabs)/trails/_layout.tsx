@@ -6,7 +6,17 @@ export default function TrailsLayout() {
   const { c } = useTheme();
   return (
     <Stack screenOptions={{ contentStyle: { backgroundColor: c.bg } }}>
-      <Stack.Screen name="index" options={{ title: 'Trails', headerLargeTitle: true, headerTransparent: true, headerLargeTitleShadowVisible: false }} />
+      <Stack.Screen
+        name="index"
+        options={{
+          title: 'Trails',
+          headerLargeTitle: true,
+          headerTransparent: true,
+          headerLargeTitleShadowVisible: false,
+          // The list fades out under the header (and the pinned search) instead of stopping at a dividing line.
+          scrollEdgeEffects: { top: 'soft' },
+        }}
+      />
     </Stack>
   );
 }

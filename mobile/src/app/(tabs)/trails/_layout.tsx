@@ -13,7 +13,7 @@ export default function TrailsLayout() {
           headerLargeTitle: true,
           headerTransparent: true,
           headerLargeTitleShadowVisible: false,
-          // The list fades out under the header (and the pinned search) instead of stopping at a dividing line.
+          // The list fades out under the header (and the search field) instead of stopping at a dividing line.
           scrollEdgeEffects: { top: 'soft' },
         }}
       />

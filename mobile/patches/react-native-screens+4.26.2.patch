@@ -1,0 +1,44 @@
+diff --git a/node_modules/react-native-screens/ios/RNSSearchBar.h b/node_modules/react-native-screens/ios/RNSSearchBar.h
+index 32efddb..b014b60 100644
+--- a/node_modules/react-native-screens/ios/RNSSearchBar.h
++++ b/node_modules/react-native-screens/ios/RNSSearchBar.h
+@@ -14,9 +14,9 @@
+ 
+ @interface RNSSearchBar :
+ #if defined(__cplusplus)
+-    RCTViewComponentView <UISearchBarDelegate, RCTRNSSearchBarViewProtocol>
++    RCTViewComponentView <UISearchBarDelegate, UISearchControllerDelegate, RCTRNSSearchBarViewProtocol>
+ #else
+-    UIView <UISearchBarDelegate>
++    UIView <UISearchBarDelegate, UISearchControllerDelegate>
+ #endif
+ 
+ @property (nonatomic) BOOL hideWhenScrolling;
+diff --git a/node_modules/react-native-screens/ios/RNSSearchBar.mm b/node_modules/react-native-screens/ios/RNSSearchBar.mm
+index 2345734..6726ab8 100644
+--- a/node_modules/react-native-screens/ios/RNSSearchBar.mm
++++ b/node_modules/react-native-screens/ios/RNSSearchBar.mm
+@@ -46,6 +46,7 @@ - (void)initCommonProps
+ #endif
+ 
+   _controller.searchBar.delegate = self;
++  _controller.delegate = self;
+ 
+   _isObscureBackgroundSet = NO;
+   _isHideNavigationBarSet = NO;
+@@ -289,6 +290,15 @@ - (void)searchBarCancelButtonClicked:(UISearchBar *)searchBar
+   [self emitOnCancelButtonPressEvent];
+   [self emitOnChangeTextEventWithText:_controller.searchBar.text];
+ }
++
++// iOS 26's integrated search closes with its own Liquid Glass X, which dismisses the controller without calling
++// searchBarCancelButtonClicked and clears the text without textDidChange, so JS never hears that search ended.
++// Report every dismissal as a cancel. After a Cancel button press this repeats the events, which is harmless.
++- (void)willDismissSearchController:(UISearchController *)searchController
++{
++  [self emitOnCancelButtonPressEvent];
++  [self emitOnChangeTextEventWithText:@""];
++}
+ #endif // !TARGET_OS_TV
+ 
+ - (void)blur

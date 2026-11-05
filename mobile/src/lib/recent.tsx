@@ -5,7 +5,7 @@ import type { Outcome } from './types';
 
 // Plans and refusals kept on the device. The chat itself isn't kept across launches (each one starts a
 // new conversation), so this is what lets Home list recent plans and a plan page reopen.
-const KEY = 'trailhead.recent.v1';
+const KEY = 'trailai.recent.v1';
 const KEEP = 10;
 
 type Ctx = { recent: Outcome[]; add: (o: Outcome) => void; get: (id: string) => Outcome | undefined };

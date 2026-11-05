@@ -1,4 +1,4 @@
-# Trailhead (COMP4431 group project)
+# TrailAI (COMP4431 group project)
 
 A Hong Kong hiking pre-trip planning agent: a Python backend (agent harness + tools over official AFCD/HKO data) and an Expo iOS app (map + chat + voice). The spec is `docs/GroupProject.pdf`, and run instructions are in `README.md`.
 - Deliverables due 18/19 Nov 2026: a source zip + pptx.

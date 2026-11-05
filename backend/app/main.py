@@ -18,7 +18,7 @@ from .llm.registry import build_provider  # noqa: E402
 from .rest import PHOTOS, build_router  # noqa: E402
 from .tools import data  # noqa: E402
 
-app = FastAPI(title="Trailhead - HK hiking agent")
+app = FastAPI(title="TrailAI - HK hiking agent")
 sessions = SessionStore()
 provider = build_provider()
 agent = Agent(provider)

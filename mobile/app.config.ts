@@ -4,26 +4,26 @@ import type { ExpoConfig } from 'expo/config';
 const googleMapsKey = process.env.GOOGLE_MAPS_IOS_KEY ?? '';
 
 const config: ExpoConfig = {
-  name: 'Trailhead',
-  slug: 'trailhead',
+  name: 'TrailAI',
+  slug: 'trailai',
   version: '1.0.0',
   orientation: 'portrait',
   icon: './assets/images/icon.png',
-  scheme: 'trailhead',
+  scheme: 'trailai',
   userInterfaceStyle: 'automatic', // Settings → Appearance overrides it at runtime (Night by default)
   ios: {
     // Icon Composer bundle: iOS 26+ renders the mark as Liquid Glass, with dark and tinted variants.
     icon: './assets/app.icon',
-    bundleIdentifier: 'hk.comp4431.trailhead',
+    bundleIdentifier: 'hk.comp4431.trailai',
     supportsTablet: false,
     infoPlist: {
       // The backend runs on the laptop (localhost in the simulator, hotspot IP on a phone) over plain HTTP/WS.
       NSAppTransportSecurity: { NSAllowsArbitraryLoads: true, NSAllowsLocalNetworking: true },
-      NSLocalNetworkUsageDescription: 'Trailhead connects to its planning server on your local network.',
+      NSLocalNetworkUsageDescription: 'TrailAI connects to its planning server on your local network.',
     },
   },
   android: {
-    package: 'hk.comp4431.trailhead',
+    package: 'hk.comp4431.trailai',
     predictiveBackGestureEnabled: false,
   },
   web: { output: 'static', favicon: './assets/images/favicon.png' },
@@ -34,8 +34,8 @@ const config: ExpoConfig = {
     [
       'expo-speech-recognition',
       {
-        microphonePermission: 'Allow Trailhead to use the microphone so you can speak your trip.',
-        speechRecognitionPermission: 'Allow Trailhead to turn your speech into text.',
+        microphonePermission: 'Allow TrailAI to use the microphone so you can speak your trip.',
+        speechRecognitionPermission: 'Allow TrailAI to turn your speech into text.',
       },
     ],
     './plugins/withSceneLifecycle',

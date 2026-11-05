@@ -1,4 +1,4 @@
-# Trailhead: HK Country Park Planner
+# TrailAI: HK Country Park Planner
 
 COMP4431 group project (2026/27): a domain-specific chatbot for planning Hong Kong hikes.
 
@@ -7,7 +7,7 @@ COMP4431 group project (2026/27): a domain-specific chatbot for planning Hong Ko
 | _TODO_ | _TODO_ |
 | _TODO_ | _TODO_ |
 
-Trailhead is a pre-trip feasibility agent. You describe a hike loosely ("Saturday, half day, sea view, it rained last night"). It asks what's missing, checks official AFCD trail data, live HKO weather, sunset times and AFCD closures, and then returns one of two things:
+TrailAI is a pre-trip feasibility agent. You describe a hike loosely ("Saturday, half day, sea view, it rained last night"). It asks what's missing, checks official AFCD trail data, live HKO weather, sunset times and AFCD closures, and then returns one of two things:
 - a day plan, drawn on a map, with every trail, weather and sunset figure cited, or
 - a no-go card that gives the evidence and an alternative.
 

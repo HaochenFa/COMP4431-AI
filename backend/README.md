@@ -1,1 +1,1 @@
-Backend for Trailhead. See ../README.md.
+Backend for TrailAI. See ../README.md.

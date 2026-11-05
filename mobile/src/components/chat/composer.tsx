@@ -83,7 +83,7 @@ export function Composer({
           <Icon name="arrow.up" size={17} weight="bold" color="onAccent" />
         </Press>
       ) : (
-        <Press onPress={() => voice.start()} disabled={disabled} style={[styles.round, { backgroundColor: c.surface2 }, disabled && styles.off]} accessibilityLabel="Talk to Trailhead">
+        <Press onPress={() => voice.start()} disabled={disabled} style={[styles.round, { backgroundColor: c.surface2 }, disabled && styles.off]} accessibilityLabel="Talk to TrailAI">
           <Icon name="mic.fill" size={17} color="text" />
         </Press>
       )}

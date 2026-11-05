@@ -94,7 +94,10 @@ export default function Trails() {
 
   return (
     <>
-      <Stack.Screen options={{ headerLargeTitle: !onMap }} />
+      {/* react-native-screens applies scrollEdgeEffects to the screen's first scroll view only when the option
+          changes, not when the list or the map's ScrollView mounts later, so the value differs per mode (`left`
+          is inert here) to re-apply the soft top edge after each switch. */}
+      <Stack.Screen options={{ headerLargeTitle: !onMap, scrollEdgeEffects: { top: 'soft', left: onMap ? 'hidden' : 'automatic' } }} />
       <Stack.SearchBar
         ref={searchBar}
         placement="integratedButton"
@@ -163,12 +166,22 @@ export default function Trails() {
         </View>
       ) : (
         <View style={styles.flex}>
-          <TrailMap
+          {/* A still ScrollView around the map, first in the tree: the header's soft edge (scrollEdgeEffects) is only
+              applied to the screen's first scroll view, and without it UIKit falls back to the chips' row, drawing
+              a hard edge with a dividing line over the map. */}
+          <ScrollView
             style={StyleSheet.absoluteFill}
-            pins={pins.filter((t) => t.start_coord).map((t) => ({ id: t.id, coord: t.start_coord!, title: t.name, selected: t.id === selected }))}
-            onPinPress={setSelected}
-            padding={{ top: 150, right: 24, bottom: 170, left: 24 }}
-          />
+            contentContainerStyle={styles.flex}
+            scrollEnabled={false}
+            contentInsetAdjustmentBehavior="never"
+          >
+            <TrailMap
+              style={StyleSheet.absoluteFill}
+              pins={pins.filter((t) => t.start_coord).map((t) => ({ id: t.id, coord: t.start_coord!, title: t.name, selected: t.id === selected }))}
+              onPinPress={setSelected}
+              padding={{ top: 150, right: 24, bottom: 170, left: 24 }}
+            />
+          </ScrollView>
           <View style={[styles.mapTop, { top: insets.top + NAV_BAR + 6 }]} pointerEvents="box-none">
             {filters}
           </View>

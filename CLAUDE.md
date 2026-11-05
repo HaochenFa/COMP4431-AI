@@ -105,6 +105,8 @@ Before calling a task done, run the relevant checks: `uv run pytest` for backend
 - **iOS 27 SDK requires the UIScene life cycle.** Expo 57's template doesn't adopt it, so `mobile/plugins/withSceneLifecycle.js` patches the generated AppDelegate + Info.plist to use Expo's `ExpoAppSceneDelegate` (mirrors the SDK 58 template). Remove the plugin when upgrading to SDK 58.
 - **Xcode 27 has no Simulator.app**: simulators are shown in Device Hub (`open -b com.apple.dt.Devices`). `scripts/dev.sh` boots the device with `simctl`, then opens Device Hub.
 - **Chat scrolling and keyboard (`app/chat.tsx`):** the composer is padded by the keyboard's height directly. `KeyboardAvoidingView` under a native header needs the header height, which is still a default while a push runs. The list is a `ScrollView`: `FlatList.scrollToEnd` estimates from measured cells, so a plan card that has just arrived stays below the fold.
+- **Liquid Glass and animation:** a `GlassView` renders nothing inside a view with a Reanimated `entering` animation or a fading opacity. Move glass with `useAnimatedStyle` transforms and fade only its siblings (see `components/trail/trail-search.tsx`).
+- **Trails search is a mode** (`TrailSearch`): its own results over the list, so the list never jumps and Cancel returns it as it was. Scroll events report the header's inset as 0, so positions under the header come from the safe area plus the 54 pt compact bar.
 - **Metro red box:** after a syntax error the app once came back with light tokens over dark native views; a relaunch fixed it. Seen once, in dev only, and not reproduced.
 - **Local HTTP clients here go through a SOCKS proxy.** Use `websockets.connect(..., proxy=None)` in scripts that call localhost.
 - **Ollama:**

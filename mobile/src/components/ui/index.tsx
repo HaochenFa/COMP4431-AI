@@ -1,7 +1,7 @@
 // Primitives every screen is built from. Hierarchy comes from type and surface steps, not borders.
 import { GlassView, isLiquidGlassAvailable } from 'expo-glass-effect';
 import { SymbolView, type SFSymbol, type SymbolType, type SymbolWeight } from 'expo-symbols';
-import { Children, Fragment, type ReactNode, type Ref } from 'react';
+import { Children, Fragment, type ReactNode } from 'react';
 import {
   PlatformColor,
   Pressable,
@@ -100,29 +100,31 @@ export function GlassButton({
  * Search as a Liquid Glass capsule, like the composer: one look whether it's idle, focused or scrolled.
  * Its text and icons use the system label colours, as a native search bar does: the glass turns light or dark with
  * what scrolls under it, and they follow it, so a query stays readable over a photo or another row's text.
+ * With `onPress` it is a button that opens a search elsewhere, looking the same.
  */
 export function SearchField({
   value,
   onChangeText,
   placeholder,
   style,
-  ref,
-  onBlur,
+  autoFocus,
+  onPress,
 }: {
   value: string;
   onChangeText: (text: string) => void;
   placeholder: string;
   style?: StyleProp<ViewStyle>;
-  ref?: Ref<TextInput>;
-  onBlur?: () => void;
+  autoFocus?: boolean;
+  onPress?: () => void;
 }) {
   const { dark } = useTheme();
-  return (
+  const field = (
     <Glass interactive style={[styles.search, style]}>
       <Icon name="magnifyingglass" size={16} weight="medium" color={PlatformColor('secondaryLabel')} />
       <TextInput
-        ref={ref}
-        onBlur={onBlur}
+        editable={!onPress}
+        pointerEvents={onPress ? 'none' : 'auto'}
+        autoFocus={autoFocus}
         value={value}
         onChangeText={onChangeText}
         placeholder={placeholder}
@@ -140,6 +142,13 @@ export function SearchField({
         </Pressable>
       ) : null}
     </Glass>
+  );
+  return onPress ? (
+    <Pressable onPress={onPress} accessibilityRole="search" accessibilityLabel={placeholder}>
+      {field}
+    </Pressable>
+  ) : (
+    field
   );
 }
 

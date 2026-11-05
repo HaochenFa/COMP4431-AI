@@ -1,6 +1,8 @@
 import { Stack, router } from 'expo-router';
-import { useState } from 'react';
-import { ActivityIndicator, FlatList, ScrollView, StyleSheet, View } from 'react-native';
+import { useRef, useState } from 'react';
+import { ActivityIndicator, ScrollView, StyleSheet, View, type FlatList, type TextInput } from 'react-native';
+import Animated, { useAnimatedReaction, useAnimatedScrollHandler, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
+import { scheduleOnRN } from 'react-native-worklets';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { TrailFeature, TrailRow } from '@/components/trail/trail-row';
@@ -21,6 +23,15 @@ const REGIONS: [string, string][] = [
   ['Peng Chau', 'Peng Chau'],
 ];
 
+// The search field's top and bottom in the list (the header's 4 pt padding, then the 46 pt field).
+const SEARCH_TOP = 4;
+const SEARCH_HEIGHT = 46;
+const SEARCH_BOTTOM = SEARCH_TOP + SEARCH_HEIGHT;
+// The compact navigation bar under the status bar (iOS 26); the pinned field's gap below it, and the results' below the field.
+const NAV_BAR = 54;
+const PIN_GAP = 8;
+const RESULTS_GAP = 10;
+
 const matchesDifficulty = (t: TrailSummary, wanted: string) =>
   t.difficulty === wanted || (wanted === 'Difficult' && t.difficulty === 'Very difficult') || (wanted === 'Unrated' && t.difficulty === 'NA');
 
@@ -34,6 +45,58 @@ export default function Trails() {
   const [mode, setMode] = useState<'list' | 'map'>('list');
   const [selected, setSelected] = useState<string | null>(null);
   const insets = useSafeAreaInsets();
+  const searchRef = useRef<TextInput>(null);
+  // Once the search field has scrolled away, a header button brings it back where the list is: the field slides
+  // down and pins under the header, and the list stays put. It unpins when it loses focus with nothing typed.
+  const [searchAway, setSearchAway] = useState(false);
+  const [pinned, setPinned] = useState(false);
+  // The list position under the compact header: content y = 0 at its bottom edge, negative while the large title shows.
+  // (Scroll events report the header's inset as 0, so it comes from the safe area and the bar's height.)
+  const scrolled = useSharedValue(0);
+  const pin = useSharedValue(0);
+  const barBottom = insets.top + NAV_BAR;
+
+  const onScroll = useAnimatedScrollHandler((e) => {
+    scrolled.set(e.contentOffset.y + barBottom);
+  });
+  useAnimatedReaction(
+    () => scrolled.get() > SEARCH_BOTTOM,
+    (away, was) => {
+      if (away !== was) scheduleOnRN(setSearchAway, away);
+    },
+  );
+  // Pinned, the field moves down with the scroll, so it stays PIN_GAP under the header.
+  const pinStyle = useAnimatedStyle(() => ({ transform: [{ translateY: Math.max(0, scrolled.get() + PIN_GAP - SEARCH_TOP) * pin.get() }] }));
+  const focusSearch = () => searchRef.current?.focus();
+  const openSearch = () => {
+    setPinned(true);
+    // Focus once the field is in view: iOS scrolls a focused field that is off screen back into view.
+    pin.set(
+      withTiming(1, { duration: 220 }, (done) => {
+        if (done) scheduleOnRN(focusSearch);
+      }),
+    );
+  };
+  const closeSearch = () => {
+    setPinned(false);
+    pin.set(withTiming(0, { duration: 220 }));
+  };
+  const listRef = useRef<FlatList<TrailSummary>>(null);
+  const headerHeight = useRef(0);
+  const changeQuery = (text: string) => {
+    setQuery(text);
+    if (!text && !searchRef.current?.isFocused()) closeSearch(); // cleared with the keyboard down
+    // Typing in the pinned field: show the results from the first one, just under the field.
+    const firstResult = headerHeight.current - (PIN_GAP + SEARCH_HEIGHT + RESULTS_GAP);
+    if (pinned && scrolled.get() > firstResult) listRef.current?.scrollToOffset({ offset: firstResult - barBottom, animated: false });
+  };
+  const toggleMode = () => {
+    // The list remounts at its top, so start it unpinned.
+    closeSearch();
+    scrolled.set(0);
+    setSearchAway(false);
+    setMode(mode === 'list' ? 'map' : 'list');
+  };
 
   const q = query.trim().toLowerCase();
   const shown = (list ?? []).filter(
@@ -48,7 +111,9 @@ export default function Trails() {
   const picked = shown.find((t) => t.id === selected);
 
   const onMap = mode === 'map';
-  const search = <SearchField value={query} onChangeText={setQuery} placeholder="Search by name or place" />;
+  const search = (
+    <SearchField ref={searchRef} value={query} onChangeText={changeQuery} onBlur={() => !query && closeSearch()} placeholder="Search by name or place" />
+  );
   const filters = (
     <ScrollView horizontal showsHorizontalScrollIndicator={false} keyboardShouldPersistTaps="handled" contentContainerStyle={styles.chips} style={styles.bleed}>
       {DIFFICULTIES.map((d) => (
@@ -75,8 +140,8 @@ export default function Trails() {
     </ScrollView>
   );
   const header = (
-    <View style={styles.filters}>
-      {search}
+    <View style={styles.filters} onLayout={(e) => (headerHeight.current = e.nativeEvent.layout.height)}>
+      <Animated.View style={[styles.pinned, pinStyle]}>{search}</Animated.View>
       {filters}
       <T v="footnote" color="text2">
         {list ? `${shown.length} official ${shown.length === 1 ? 'trail' : 'trails'}` : ' '}
@@ -89,19 +154,26 @@ export default function Trails() {
       {/* Search is our own glass field, not the header's: the native one only turns to glass once focused. */}
       <Stack.Screen options={{ headerLargeTitle: !onMap }} />
       <Stack.Toolbar placement="right">
+        {!onMap && searchAway && !pinned ? <Stack.Toolbar.Button icon="magnifyingglass" onPress={openSearch} accessibilityLabel="Search trails" /> : null}
         <Stack.Toolbar.Button
           icon={mode === 'list' ? 'map' : 'list.bullet'}
-          onPress={() => setMode(mode === 'list' ? 'map' : 'list')}
+          onPress={toggleMode}
           accessibilityLabel={mode === 'list' ? 'Show on map' : 'Show as list'}
         />
       </Stack.Toolbar>
       {mode === 'list' ? (
-        <FlatList
+        <Animated.FlatList
+          ref={listRef}
+          onScroll={onScroll}
+          // An empty search lets go when the list is dragged, with or without an on-screen keyboard to dismiss.
+          onScrollBeginDrag={() => !query && searchRef.current?.blur()}
+          scrollEventThrottle={16}
           style={{ backgroundColor: c.bg }}
           contentInsetAdjustmentBehavior="automatic"
           data={shown}
           keyExtractor={(t) => t.id}
           ListHeaderComponent={header}
+          ListHeaderComponentStyle={styles.header}
           renderItem={({ item, index }) =>
             index === 0 ? (
               <TrailFeature t={item} note={note(item)} onPress={() => open(item)} />
@@ -167,6 +239,9 @@ const styles = StyleSheet.create({
   flex: { flex: 1 },
   list: { paddingHorizontal: 16, paddingBottom: 40 },
   filters: { gap: 12, paddingBottom: 14, paddingTop: 4 },
+  // Above the rows, so the pinned field floats over them.
+  header: { zIndex: 1 },
+  pinned: { zIndex: 1 },
   mapTop: { position: 'absolute', left: 16, right: 16, gap: 10 },
   bleed: { marginHorizontal: -16 },
   chips: { paddingHorizontal: 16, gap: 8, alignItems: 'center' },

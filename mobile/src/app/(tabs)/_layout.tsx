@@ -6,11 +6,12 @@ import { Icon, Press, T } from '@/components/ui';
 import { useTheme } from '@/constants/theme';
 
 // Native Liquid Glass tab bar, monochrome. "Ask TrailAI" floats above it on every tab (bottom accessory),
-// so the agent is one tap away while browsing. The bar never minimises: a collapsed bar hides the Trails tab.
+// so the agent is one tap away while browsing. Scrolling down shrinks the bar to one row, the current tab
+// and the accessory side by side (Apple's iOS 26 pattern); scrolling up or tapping the tab brings it back.
 export default function TabsLayout() {
   const { c } = useTheme();
   return (
-    <NativeTabs tintColor={c.text} minimizeBehavior="never">
+    <NativeTabs tintColor={c.text} minimizeBehavior="onScrollDown">
       <NativeTabs.BottomAccessory>
         <AskAccessory />
       </NativeTabs.BottomAccessory>

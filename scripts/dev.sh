@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# One command for a local Trailhead session: Ollama (embeddings), the backend, Metro, and the app in a simulator it boots and shows.
+# One command for a local TrailAI session: Ollama (embeddings), the backend, Metro, and the app in a simulator it boots and shows.
 #
 #   scripts/dev.sh                     start everything, reusing whatever is already running
 #   scripts/dev.sh --build             rebuild the native app first (after adding a native package or editing app.config.ts)
@@ -13,7 +13,7 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-BUNDLE_ID="hk.comp4431.trailhead"
+BUNDLE_ID="hk.comp4431.trailai"
 LOGS="$ROOT/.logs"
 BUILD=0 OLLAMA=1 PROFILE="" DEVICE=""
 
@@ -96,7 +96,7 @@ say "Backend: $(get http://localhost:8000/health)"
 # UDIDs of the matching `simctl list devices` lines, in list order (empty, not an error, when none match).
 udids() { xcrun simctl list devices "$1" | { grep -E "$2" || true; } | grep -Eo '[0-9A-F-]{36}' || true; }
 # Whether the app is installed, without booting the device.
-has_app() { compgen -G "$HOME/Library/Developer/CoreSimulator/Devices/$1/data/Containers/Bundle/Application/*/Trailhead.app" >/dev/null; }
+has_app() { compgen -G "$HOME/Library/Developer/CoreSimulator/Devices/$1/data/Containers/Bundle/Application/*/TrailAI.app" >/dev/null; }
 
 if [[ -n $DEVICE ]]; then
   UDID="$(udids available "^ +$DEVICE \(" | head -1)"
@@ -130,7 +130,7 @@ launch_app() {
   wait_for "Metro" 90 sh -c "curl -fsS --noproxy '*' --max-time 2 http://localhost:8081/status | grep -q running"
   xcrun simctl terminate "$UDID" "$BUNDLE_ID" >/dev/null 2>&1 || true
   xcrun simctl launch "$UDID" "$BUNDLE_ID" >/dev/null
-  say "Launched Trailhead (the first load bundles the JS; give it a few seconds)"
+  say "Launched TrailAI (the first load bundles the JS; give it a few seconds)"
 }
 
 # --- Metro + app ---

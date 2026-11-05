@@ -4,7 +4,7 @@ import { Appearance } from 'react-native';
 
 // Simulator reaches the laptop via localhost; a phone needs the laptop's LAN / hotspot IP (set in Settings).
 const DEFAULT_URL = process.env.EXPO_PUBLIC_BACKEND_URL ?? 'http://localhost:8000';
-const KEY = 'trailhead.settings.v1';
+const KEY = 'trailai.settings.v1';
 
 /** Night trail is the default look; Day (light) is for projectors; System follows iOS. */
 export type AppearanceSetting = 'dark' | 'light' | 'system';

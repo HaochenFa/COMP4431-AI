@@ -5,7 +5,7 @@ import { StyleSheet, View } from 'react-native';
 import { Icon, Press, T } from '@/components/ui';
 import { useTheme } from '@/constants/theme';
 
-// Native Liquid Glass tab bar, monochrome. "Ask Trailhead" floats above it on every tab (bottom accessory),
+// Native Liquid Glass tab bar, monochrome. "Ask TrailAI" floats above it on every tab (bottom accessory),
 // so the agent is one tap away while browsing. The bar never minimises: a collapsed bar hides the Trails tab.
 export default function TabsLayout() {
   const { c } = useTheme();
@@ -31,13 +31,13 @@ function AskAccessory() {
   const inline = placement === 'inline';
   return (
     <View style={[styles.ask, inline && styles.askInline]}>
-      <Press onPress={() => router.push('/chat')} style={styles.askText} accessibilityRole="button" accessibilityLabel="Ask Trailhead">
+      <Press onPress={() => router.push('/chat')} style={styles.askText} accessibilityRole="button" accessibilityLabel="Ask TrailAI">
         <Icon name="bubble.left.and.text.bubble.right" size={inline ? 15 : 17} color="text2" />
         <T v={inline ? 'subhead' : 'body'} color="text2" numberOfLines={1}>
-          Ask Trailhead
+          Ask TrailAI
         </T>
       </Press>
-      <Press onPress={() => router.push({ pathname: '/chat', params: { listen: '1' } })} hitSlop={10} accessibilityRole="button" accessibilityLabel="Talk to Trailhead">
+      <Press onPress={() => router.push({ pathname: '/chat', params: { listen: '1' } })} hitSlop={10} accessibilityRole="button" accessibilityLabel="Talk to TrailAI">
         <Icon name="mic.fill" size={inline ? 16 : 18} color="text" />
       </Press>
     </View>

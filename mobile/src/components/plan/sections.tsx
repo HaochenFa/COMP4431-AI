@@ -60,8 +60,8 @@ export function SafetyChecks({ checks, plan }: { checks: ToolStep[]; plan?: Trip
       inset={52}
       footer={
         plan
-          ? "Trailhead can't give a plan until these checks pass. The server enforces it, not just the prompt."
-          : 'Trailhead can only call a no-go with evidence from these checks. The server enforces it, not just the prompt.'
+          ? "TrailAI can't give a plan until these checks pass. The server enforces it, not just the prompt."
+          : 'TrailAI can only call a no-go with evidence from these checks. The server enforces it, not just the prompt.'
       }>
       {rows.map((s) => {
         const meta = CHECK[s.name];

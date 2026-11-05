@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Local Ollama server for Trailhead on port 11435, next to (not replacing) the Ollama menu-bar app on 11434.
+# Local Ollama server for TrailAI on port 11435, next to (not replacing) the Ollama menu-bar app on 11434.
 #
 # The agent's prompt (system + safety + tool schemas + skills + results) runs 10-15k tokens, and Ollama's
 # OpenAI-compatible endpoint ignores num_ctx, so the context length has to be set on the server or

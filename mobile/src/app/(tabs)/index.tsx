@@ -38,7 +38,7 @@ export default function Home() {
 
       <Outlook />
 
-      <ListSection title="Ask Trailhead" inset={52}>
+      <ListSection title="Ask TrailAI" inset={52}>
         {PROMPTS.map((p) => (
           <ListRow key={p.text} icon={p.icon} iconColor="accentInk" title={p.title} subtitle={p.detail} accessory="chevron" onPress={() => ask(p.text)} />
         ))}
@@ -85,7 +85,7 @@ function Outlook() {
         <View style={styles.row}>
           <Icon name={failed ? 'wifi.exclamationmark' : 'cloud.sun'} size={18} color="text2" />
           <T v="subhead" color="text2" style={styles.shrink}>
-            {failed ? "Can't reach the Trailhead server. Check the address in Settings." : 'Checking the Hong Kong Observatory…'}
+            {failed ? "Can't reach the TrailAI server. Check the address in Settings." : 'Checking the Hong Kong Observatory…'}
           </T>
         </View>
       </Card>

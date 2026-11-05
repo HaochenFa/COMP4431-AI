@@ -141,7 +141,7 @@ function ChatTitle() {
   const sub = !connected ? 'Connecting…' : scenario !== 'live' ? `Demo · ${scenarioLabel(scenario)}` : model?.split('/').pop();
   return (
     <View style={styles.title}>
-      <T v="headline">Trailhead</T>
+      <T v="headline">TrailAI</T>
       {sub ? (
         <T v="caption" color={connected && scenario !== 'live' ? 'caution' : 'text2'} numberOfLines={1}>
           {sub}

@@ -43,7 +43,7 @@ export function useVoice({ onFinal }: { onFinal: (text: string) => void }) {
     Speech.stop(); // or the app talks over the user and hears itself
     const perm = await ExpoSpeechRecognitionModule.requestPermissionsAsync();
     if (!perm.granted) {
-      Alert.alert('Voice is off', 'Allow the microphone and speech recognition for Trailhead in Settings, or type instead.', [
+      Alert.alert('Voice is off', 'Allow the microphone and speech recognition for TrailAI in Settings, or type instead.', [
         { text: 'Not now', style: 'cancel' },
         { text: 'Open Settings', onPress: () => Linking.openSettings() },
       ]);

@@ -1,5 +1,6 @@
 import { StyleSheet, View } from 'react-native';
 
+import { Badges, DemoChip, PlanChip } from '@/components/plan/sections';
 import { TrailImage } from '@/components/trail/trail-image';
 import { Card, Chip, Icon, Press, T, hairline } from '@/components/ui';
 import { REFUSAL_LABEL, difficultyTone, shortDate, useTheme } from '@/constants/theme';
@@ -21,7 +22,10 @@ export function PlanResult({ plan, onOpen }: { plan: TripPlan; onOpen: () => voi
       <Card>
         <TrailImage id={p.id} size="hero" scrim segments={trackFor(p.id)?.segments} style={styles.media}>
           <View style={styles.badge}>
-            <Chip tone="accent" icon="checkmark" label={`Go · ${shortDate(plan.date)}`} />
+            <Badges>
+              <PlanChip plan={plan} />
+              <DemoChip scenario={plan.scenario} />
+            </Badges>
           </View>
         </TrailImage>
         <View style={styles.body}>
@@ -70,7 +74,10 @@ export function RefusalResult({ refusal, onOpen }: { refusal: Refusal; onOpen: (
     <Press onPress={onOpen} accessibilityRole="button" accessibilityLabel={`No-go: ${refusal.summary}`}>
       <Card>
         <View style={styles.body}>
-          <Chip tone="danger" icon="hand.raised.fill" label={`No-go · ${shortDate(refusal.date)}`} />
+          <Badges>
+            <Chip tone="danger" icon="hand.raised.fill" label={`No-go · ${shortDate(refusal.date)}`} />
+            <DemoChip scenario={refusal.scenario} />
+          </Badges>
           <T v="footnote" color="danger" weight="600">
             {REFUSAL_LABEL[refusal.code] ?? refusal.code.replace(/_/g, ' ')}
           </T>

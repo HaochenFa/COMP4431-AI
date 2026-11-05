@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 import json
 import time
+from collections import deque
 from dataclasses import dataclass, field
 from typing import Any, Awaitable, Callable
 
@@ -12,6 +13,9 @@ from ..llm.base import Message, ToolResult
 from ..paths import TRACES
 
 Emit = Callable[[dict[str, Any]], Awaitable[None]]
+
+LEDGER_TTL_S = 3600  # closures and warnings change: checks older than this no longer pass the gate
+MISSED_EVENTS = 500
 
 
 @dataclass
@@ -24,6 +28,7 @@ class Ledger:
     no_go: dict[str, list[str]] = field(default_factory=dict)  # date -> no-go warning codes that apply to it
     warnings: dict[str, list[str]] = field(default_factory=dict)  # date -> every applicable warning code (incl. WHOT)
     forecast: dict[str, str] = field(default_factory=dict)  # date -> forecast text
+    weather_line: dict[str, str] = field(default_factory=dict)  # date -> one line for the plan card
     max_c: dict[str, float] = field(default_factory=dict)  # date -> forecast max temperature
     sunset: dict[str, str] = field(default_factory=dict)  # date -> HH:MM
 
@@ -44,12 +49,22 @@ class Session:
     pending: Pending | None = None
     loaded_skills: set[str] = field(default_factory=set)
     lock: asyncio.Lock = field(default_factory=asyncio.Lock)
+    missed: deque[dict[str, Any]] = field(default_factory=lambda: deque(maxlen=MISSED_EVENTS))  # replayed on reconnect
+    last_active: float = field(default_factory=time.time)
 
     def reset(self) -> None:
         self.messages.clear()
         self.ledger = Ledger()
         self.pending = None
         self.loaded_skills.clear()
+        self.missed.clear()
+
+    def touch(self) -> None:
+        """Called on each client event: a conversation picked up again must re-check before it can plan."""
+        now = time.time()
+        if now - self.last_active > LEDGER_TTL_S:
+            self.ledger = Ledger(sunset=self.ledger.sunset)  # sunset doesn't change
+        self.last_active = now
 
     def set_scenario(self, scenario: str) -> None:
         """Checks made under another scenario no longer hold, so the gate must see them re-run."""

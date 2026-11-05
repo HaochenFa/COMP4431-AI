@@ -6,8 +6,9 @@ import Animated, { FadeIn } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Chip, Glass, Icon, ListRow, ListSection, Press, SectionTitle, T } from '@/components/ui';
-import { useTheme } from '@/constants/theme';
+import { shortDate, useTheme } from '@/constants/theme';
 import { trailTitle } from '@/lib/format';
+import { scenarioLabel } from '@/lib/scenarios';
 import { useTrails } from '@/lib/trails';
 import type { Citation, ToolStep, TripPlan } from '@/lib/types';
 import { warningName } from '@/lib/warnings';
@@ -17,6 +18,21 @@ const CHECK: Record<string, { label: string; icon: SFSymbol }> = {
   get_weather: { label: 'HKO forecast', icon: 'cloud.sun' },
   get_daylight: { label: 'Daylight', icon: 'sunset' },
 };
+
+/** Go, or Provisional when HKO has no forecast for the date yet. */
+export function PlanChip({ plan, date = true }: { plan: TripPlan; date?: boolean }) {
+  const when = date ? ` · ${shortDate(plan.date)}` : '';
+  return plan.provisional ? <Chip tone="hold" icon="clock" label={`Provisional${when}`} /> : <Chip tone="accent" icon="checkmark" label={`Go${when}`} />;
+}
+
+/** Marks a plan or refusal that came from a demo scenario, wherever it is shown. */
+export function DemoChip({ scenario }: { scenario?: string }) {
+  return scenario ? <Chip tone="glass" icon="theatermasks" label={`Demo · ${scenarioLabel(scenario)}`} /> : null;
+}
+
+export function Badges({ children }: { children: ReactNode }) {
+  return <View style={styles.badges}>{children}</View>;
+}
 
 /**
  * The safety gate made visible: the closure, weather and daylight checks the server requires (in code)
@@ -50,23 +66,22 @@ export function SafetyChecks({ checks, plan }: { checks: ToolStep[]; plan?: Trip
       {rows.map((s) => {
         const meta = CHECK[s.name];
         const summary = s.summary ?? '';
-        const bad =
-          (s.name === 'check_closures' && /^closed/i.test(summary)) || (s.name === 'get_weather' && /^WARNING/.test(summary));
+        const closed = /^closed:\s*/i.test(summary) ? summary.replace(/^closed:\s*/i, '').split(/,\s*/) : [];
+        // On a plan only its own trails count: a candidate the agent dropped for being closed is the check working.
+        const blocking = plan ? closed.filter((t) => t === plan.primary.id || t === plan.backup?.id) : closed;
+        const bad = (s.name === 'check_closures' && blocking.length > 0) || (s.name === 'get_weather' && /^WARNING/.test(summary));
+        const noForecast = s.name === 'get_weather' && /^beyond/.test(summary);
         let detail = summary;
         if (s.name === 'check_closures')
-          detail = /^closed:\s*/i.test(summary)
-            ? `Closed: ${summary.replace(/^closed:\s*/i, '').split(/,\s*/).map(name).join(', ')}`
-            : summary === 'no closures'
-              ? 'No closures on this route'
-              : summary;
+          detail = blocking.length ? `Closed: ${blocking.map(name).join(', ')}` : closed.length || summary === 'no closures' ? 'No closures on this route' : summary;
         if (s.name === 'get_weather')
-          // The tool's one-line summary is capped at 80 chars; drop its "(warnings now, not on <date>)" tail.
+          // A plan's line has HKO's temperatures and wind; otherwise the summary, less its "(warnings now, not on <date>)" tail.
           detail = /^WARNING /.test(summary)
             ? `In force: ${summary.slice(8).split(/,\s*/).map(warningName).join(', ')}`
-            : summary.replace(/\s*\(warnings now.*$/, '');
+            : plan?.weather_summary || summary.replace(/\s*\(warnings now.*$/, '');
         if (s.name === 'get_daylight') detail = plan ? `Sunset ${plan.sunset} · you finish by ${plan.finish_time}` : summary.replace(/^sunset/, 'Sunset');
         const [icon, color] =
-          s.status === 'error'
+          s.status === 'error' || noForecast
             ? (['exclamationmark.triangle.fill', 'caution'] as const)
             : bad
               ? (['xmark.octagon.fill', 'danger'] as const)
@@ -179,6 +194,7 @@ export function ActionBar({ children }: { children: ReactNode }) {
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
+  badges: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
   step: { flexDirection: 'row', gap: 12, minHeight: 44 },
   time: { width: 96, fontVariant: ['tabular-nums'], paddingTop: 1 },
   rail: { width: 12, alignItems: 'center' },

@@ -2,7 +2,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { Linking, StyleSheet, View } from 'react-native';
 import Animated, { useAnimatedScrollHandler, useSharedValue } from 'react-native-reanimated';
 
-import { ActionBar, Refine, SafetyChecks, Sources, Timeline } from '@/components/plan/sections';
+import { ActionBar, Badges, DemoChip, PlanChip, Refine, SafetyChecks, Sources, Timeline } from '@/components/plan/sections';
 import { ElevationChart } from '@/components/trail/elevation-chart';
 import { TrailHero } from '@/components/trail/trail-hero';
 import { TrailImage } from '@/components/trail/trail-image';
@@ -27,11 +27,16 @@ function useOutcome(id: string): Outcome | undefined {
   if (it?.kind === 'refusal') return { id, kind: 'refusal', refusal: it.refusal, checks: checksBefore(items, id), savedAt: 0 };
 }
 
-/** Send a follow-up to the agent and return to the conversation. */
-function useFollowUp() {
+/**
+ * Send a follow-up to the agent and return to the conversation. A plan reopened from Recent belongs to an
+ * earlier conversation, so then the message has to say which plan it means.
+ */
+function useFollowUp(id: string, about: string) {
   const agent = useAgent();
+  const inChat = agent.items.some((it) => it.id === id);
   return (text: string) => {
-    if (!agent.send(text)) agent.setDraft(text);
+    const message = inChat ? text : `${about}: ${text}`;
+    if (!agent.send(message)) agent.setDraft(message);
     router.dismissTo('/chat');
   };
 }
@@ -48,15 +53,15 @@ export default function PlanPage() {
       </View>
     );
   }
-  return o.kind === 'plan' ? <GoPage id={o.id} plan={o.plan} checks={o.checks} /> : <NoGoPage refusal={o.refusal} checks={o.checks} />;
+  return o.kind === 'plan' ? <GoPage id={o.id} plan={o.plan} checks={o.checks} /> : <NoGoPage id={o.id} refusal={o.refusal} checks={o.checks} />;
 }
 
 function GoPage({ id, plan, checks }: { id: string; plan: TripPlan; checks: Outcome['checks'] }) {
   const { c } = useTheme();
   const { byId } = useTrails();
   const { trackFor } = useAgent();
-  const followUp = useFollowUp();
   const p = plan.primary;
+  const followUp = useFollowUp(id, `My ${shortDate(plan.date)} plan is ${p.name} (${fmtKm(p.length_km)} km, ${fmtHours(p.hours)})`);
   const meta = byId[p.id];
   const { trail } = useTrailDetail(p.id);
   const { trail: backupTrail } = useTrailDetail(plan.backup?.id);
@@ -86,7 +91,12 @@ function GoPage({ id, plan, checks }: { id: string; plan: TripPlan; checks: Outc
           scrollY={y}
           title={trailTitle({ name: p.name, trail: meta?.trail, section: meta?.section })}
           subtitle={[meta?.region, diff?.label, trailRoute(meta ?? {})].filter(Boolean).join(' · ')}
-          badge={<Chip tone="accent" icon="checkmark" label={`Go · ${shortDate(plan.date)}`} />}
+          badge={
+            <Badges>
+              <PlanChip plan={plan} />
+              <DemoChip scenario={plan.scenario} />
+            </Badges>
+          }
         />
         <View style={[styles.body, { backgroundColor: c.bg }]}>
           <T v="body">{plan.why_this}</T>
@@ -94,7 +104,7 @@ function GoPage({ id, plan, checks }: { id: string; plan: TripPlan; checks: Outc
           <StatRow
             items={[
               { value: fmtKm(p.length_km), unit: 'km', label: 'Length' },
-              { value: fmtHours(p.hours), label: 'Official time' },
+              { value: fmtHours(p.hours), label: p.hours_estimated ? 'Estimated time' : 'Official time' },
               { value: fmtM(profile?.ascent_m), unit: 'm', label: 'Climb' },
               { value: fmtM(profile?.max_m), unit: 'm', label: 'High point' },
             ]}
@@ -114,7 +124,7 @@ function GoPage({ id, plan, checks }: { id: string; plan: TripPlan; checks: Outc
             <View>
               <SectionTitle>Route</SectionTitle>
               <Press onPress={() => router.push({ pathname: '/map', params: { plan: id } })} accessibilityRole="button" accessibilityLabel="Open the map">
-                <TrailMap tracks={tracks} interactive={false} padding={{ top: 30, right: 30, bottom: 30, left: 30 }} style={styles.preview} />
+                <TrailMap tracks={tracks} interactive={false} padding={{ top: 30, right: 30, bottom: 56, left: 30 }} style={styles.preview} />
                 <View style={styles.expand}>
                   <Chip tone="glass" icon="arrow.up.left.and.arrow.down.right" label="Open map" />
                 </View>
@@ -170,23 +180,29 @@ function GoPage({ id, plan, checks }: { id: string; plan: TripPlan; checks: Outc
   );
 }
 
-function NoGoPage({ refusal, checks }: { refusal: Refusal; checks: Outcome['checks'] }) {
+function NoGoPage({ id, refusal, checks }: { id: string; refusal: Refusal; checks: Outcome['checks'] }) {
   const { c } = useTheme();
   const { byId } = useTrails();
-  const followUp = useFollowUp();
   const first = refusal.trail_ids[0];
+  const title = first && byId[first] ? trailTitle(byId[first]) : first;
+  const followUp = useFollowUp(id, `You said no to ${title ?? 'my hike'} on ${shortDate(refusal.date)}`);
   const y = useSharedValue(0);
   const onScroll = useAnimatedScrollHandler((e) => {
     y.value = e.contentOffset.y;
   });
-  const badge = <Chip tone="stop" icon="hand.raised.fill" label={`No-go · ${shortDate(refusal.date)}`} />;
+  const badge = (
+    <Badges>
+      <Chip tone="stop" icon="hand.raised.fill" label={`No-go · ${shortDate(refusal.date)}`} />
+      <DemoChip scenario={refusal.scenario} />
+    </Badges>
+  );
   const reason = REFUSAL_LABEL[refusal.code] ?? refusal.code.replace(/_/g, ' ');
 
   return (
     <View style={[styles.flex, { backgroundColor: c.bg }]}>
       <Animated.ScrollView onScroll={onScroll} scrollEventThrottle={16} contentInsetAdjustmentBehavior="never" contentContainerStyle={styles.scroll}>
         {first ? (
-          <TrailHero id={first} scrollY={y} height={320} title={byId[first] ? trailTitle(byId[first]) : first} subtitle={byId[first]?.region} badge={badge} />
+          <TrailHero id={first} scrollY={y} height={320} title={title} subtitle={byId[first]?.region} badge={badge} />
         ) : (
           <View style={[styles.plainHero, { backgroundColor: c.dangerSoft }]}>
             {badge}

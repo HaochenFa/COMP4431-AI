@@ -43,7 +43,7 @@ export function TrailMap({
   // Frame the primary route (else every route, else the pins) whenever what's drawn changes.
   const focus = tracks.filter((t) => t.role === 'primary');
   const coords = (focus.length ? focus : tracks).flatMap((t) => t.segments.flat()).map(toLatLng);
-  const fitKey = tracks.length ? tracks.map((t) => t.id).join(',') : `pins:${pins.length}`;
+  const fitKey = tracks.length ? tracks.map((t) => t.id).join(',') : pins.map((p) => p.id).join(',');
   const fit = () => {
     const target = coords.length ? coords : pins.map((p) => toLatLng(p.coord));
     if (target.length > 1) map.current?.fitToCoordinates(target, { edgePadding: padding, animated: interactive });

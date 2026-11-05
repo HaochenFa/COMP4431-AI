@@ -63,7 +63,8 @@ export function Composer({
   return (
     <Glass style={styles.bar} interactive>
       <TextInput
-        style={[styles.input, { color: c.text }]}
+        // Empty, it's one line again: a multiline input otherwise keeps the height of the text just sent.
+        style={[styles.input, { color: c.text }, !value && styles.oneLine]}
         value={value}
         onChangeText={onChange}
         placeholder={placeholder}
@@ -115,6 +116,7 @@ function Bar({ target }: { target: number }) {
 const styles = StyleSheet.create({
   bar: { flexDirection: 'row', alignItems: 'flex-end', gap: 8, padding: 6, borderRadius: 26, minHeight: 52 },
   input: { flex: 1, fontSize: 17, lineHeight: 22, paddingHorizontal: 12, paddingTop: 10, paddingBottom: 10, maxHeight: 132 },
+  oneLine: { height: 42 },
   round: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
   off: { opacity: 0.4 },
   voice: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 40, paddingHorizontal: 4 },

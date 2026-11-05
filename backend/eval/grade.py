@@ -54,7 +54,7 @@ def grade(case: dict[str, Any], outputs: list[dict[str, Any]], asks: int = 0, te
     if plan:
         p = plan["primary"]
         t = data.trails().get(p["id"], {})
-        hours = t.get("official_hours")
+        hours = data.walking_hours(t)[0]
         if (ids := exp.get("trails_any")) and p["id"] not in ids:
             reasons.append(f"primary {p['id']} not in {ids}")
         if (r := exp.get("region")) and not in_region(t.get("region") or "", r):

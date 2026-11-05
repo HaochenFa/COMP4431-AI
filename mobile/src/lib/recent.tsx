@@ -3,8 +3,8 @@ import { createContext, useCallback, useContext, useEffect, useState, type React
 
 import type { Outcome } from './types';
 
-// Plans and refusals kept on the device. The chat itself is cleared on every reconnect (the server
-// replays only a pending question), so this is what lets Home list recent plans and a plan page reopen.
+// Plans and refusals kept on the device. The chat itself isn't kept across launches (each one starts a
+// new conversation), so this is what lets Home list recent plans and a plan page reopen.
 const KEY = 'trailhead.recent.v1';
 const KEEP = 10;
 

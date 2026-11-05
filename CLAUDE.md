@@ -1,6 +1,6 @@
 # Trailhead (COMP4431 group project)
 
-A Hong Kong hiking pre-trip planning agent: a Python backend (agent harness + tools over official AFCD/HKO data) and an Expo iOS app (map + chat + voice). The spec is `docs/GroupProject.pdf`, the pitch is `docs/architecture-poster.html`, and run instructions are in `README.md`.
+A Hong Kong hiking pre-trip planning agent: a Python backend (agent harness + tools over official AFCD/HKO data) and an Expo iOS app (map + chat + voice). The spec is `docs/GroupProject.pdf`, and run instructions are in `README.md`.
 - Deliverables due 18/19 Nov 2026: a source zip + pptx.
 - The live demo is in English, about 7 minutes, and runs on a projector (primary target: iOS Simulator + backend on localhost).
 - Grading weights additional features, UI, innovation, and evaluation results.
@@ -14,7 +14,7 @@ backend/app/tools/    hiking.py (trail/knowledge/closure/weather/daylight/map to
 backend/app/skills/   Markdown SOPs loaded via load_skill; hike-safety.md is always injected into the system prompt
 backend/app/schemas.py  Wire contract (TripPlan, Refusal, QuestionCard); mirrored by mobile/src/lib/types.ts
 backend/eval/         cases.yaml (43 graded cases), run.py (runner + summary), baseline.py (no tools), driver.py (headless harness + persona), fixtures.py (frozen feeds), chat.py (terminal chat), trace.py
-backend/app/rest.py   REST for the app: GET /trails, /trails/{id}, /conditions (HKO under the session's scenario); main.py serves data/photos at /photos
+backend/app/rest.py   REST for the app: GET /trails, /trails/{id}, /conditions and /closures (both under the session's scenario); main.py serves data/photos at /photos
 mobile/src/app/       Expo Router: (tabs)/ native tabs (index = Plan home, trails/ = browse) + root pushes: chat, plan/[id], trail/[id], map, settings (modal)
 mobile/src/components/ ui/ (T, Icon, ListSection/ListRow, Chip, Button, StatRow, Glass, GlassButton, SearchField; logo.tsx = the mark), chat/ (activity row, question form, result cards, composer), trail/ (photo/route art, hero, elevation chart, map), plan/ (safety checks, timeline, sources)
 mobile/src/constants/theme.ts  "Night trail" tokens (dark default, light "Day"), type scale, TOOL_META (label + SF Symbol + progress copy)
@@ -54,14 +54,15 @@ Before calling a task done, run the relevant checks: `uv run pytest` for backend
 
 ## Invariants: don't break these
 
-- **Numbers come from tools, never the model.** `present_plan` is blocked until `check_closures` (every trail in the plan), `get_weather` and `get_daylight` have been called for that date. It is also blocked if what those checks returned rules the plan out (a no-go warning or a heavy-rain forecast for the date, or a closed trail: `safety_check`), or if km, hours or sunset differ from the tool data (`number_check` in `tools/agentic.py`). `refuse` is gated the same way, except for `OUT_OF_SCOPE`. Keep the gate in code, not only in the prompt.
+- **Numbers come from tools, never the model.** `present_plan` is blocked until `check_closures` (every trail in the plan), `get_weather` and `get_daylight` have been called for that date. It is also blocked if what those checks returned rules the plan out (a no-go warning or a heavy-rain forecast for the date, or a closed trail: `safety_check`), or if km, hours or sunset differ from the tool data or a route number was invented (`number_check` in `tools/agentic.py`). `get_weather` errors, and records nothing, for a date in the 9-day window with no forecast, so a dead feed can't read as checked. The server, not the model, writes `weather_summary`, the official citations and `provisional`. `refuse` is gated the same way, except for `OUT_OF_SCOPE`, which can't name trails. Keep the gate in code, not only in the prompt. Checks expire after an hour idle (`Session.touch`).
 - **The wire protocol is the contract between backend and app.** Any change to an event or schema must update both `backend/app/schemas.py` / the harness events and `mobile/src/lib/types.ts` + the reducer in `mobile/src/lib/agent.tsx`.
 - **History is append-only and replayed natively.** Assistant turns keep the raw provider output in `Message.native[provider_key]`, and adapters replay it verbatim: Anthropic thinking blocks / signatures, Responses reasoning items (`store=False` + `include=["reasoning.encrypted_content"]`). Never edit or strip earlier turns. Drop a `tool_use` from history only when the turn was cut off (refusal / max_tokens) and the call won't run.
 - **Tool arguments are validated with `jsonschema`** before a handler runs. Failures return `INVALID_ARGUMENTS` to the model and don't raise. Tools that take trail ids reject unknown ids (an unknown id must never read as "open").
-- **Elevation and scenery are tool data too.** `ascent_m`/`max_m` come from the official GPX (`data.profiles()`, hysteresis-smoothed); `search_knowledge` returns official description passages to translate and cite, never figures.
+- **Elevation and scenery are tool data too.** `ascent_m`/`max_m` come from the official GPX (`data.profiles()`, hysteresis-smoothed, nodata dropped); `search_knowledge` returns official description passages to translate and cite, never figures. Trails with no official time use `data.walking_hours()` (Naismith from official length and climb), flagged `hours_estimated`.
 - **Eval results must not depend on the day's weather.** `eval/` runs on `eval/fixtures.py` (synthetic forecast, seed closures and sunset) unless `--live`.
 - **Every live feed goes through `cache.fetch_json`.** Live fetches are saved to the gitignored `data/snapshots/.live/`. On failure it falls back to that copy, then to the committed seed `data/snapshots/<key>.json`, so the demo still works offline. Keep the seeds committed (e.g. `hko_SRS_json_<year>.json` for every year the demo can plan into).
-- **Demo scenarios** (`session.scenario`: `clear`, `t8`, `rainstorm`, `thunderstorm`, `closure:<id>`) override only the weather/closure tools, and their results are labelled as overrides.
+- **Demo scenarios** (`session.scenario`: `clear`, `t8`, `rainstorm`, `thunderstorm`, `closure:<id>`) override only the weather/closure tools, for today plus `SCENARIO_DAYS` (a later date can be the refusal's alternative). Their results are labelled as overrides, and plan and refusal cards carry `scenario` so the app can label them. The app owns the scenario (`settings.scenario`) and re-sends it on `hello`, because a new session or a restarted server starts on `live`. `clear` supplies a fine forecast when there is none, which is what keeps an offline demo working.
+- **Reconnects lose nothing.** `main.py` keeps events it couldn't deliver in `session.missed` and replays them after `hello`; `hello.running` tells the app whether a turn is still going. The chat isn't kept across launches, so `hello.has_history` with nothing on screen makes the app start a new session.
 
 ## Adding things
 
@@ -96,12 +97,15 @@ Before calling a task done, run the relevant checks: `uv run pytest` for backend
 - **hiking.gov.hk pages render in Chinese** (the English toggle is JS-only). Official hours, stars and GPX links are scraped from the zh-tw page, and `description_zh` is Chinese.
 - **HKO feeds:**
   - `fnd` starts tomorrow; today uses `flw`.
-  - Warnings (`warnsum`) are "now" only.
+  - Warnings (`warnsum`) are "now" only. `NO_GO_REACH_DAYS` says how far each rules out: rainstorm and thunderstorm today only, typhoon signals and landslip through tomorrow.
+  - Heavy rain has many wordings ("showers will be heavy at times"), so match `agentic.HEAVY_RAIN`, not one phrase. `flw`'s `outlook` is about later days: it isn't part of the date's forecast.
   - Sunrise/sunset comes from `opendata.php?dataType=SRS&rformat=json&year=YYYY`, one whole-year table per fetch.
   - Dates beyond 9 days return a non-error "no forecast yet".
   - The Very Hot Weather Warning is reported but isn't an automatic no-go (hike-safety decides EXTREME_HEAT).
 - **iOS 27 SDK requires the UIScene life cycle.** Expo 57's template doesn't adopt it, so `mobile/plugins/withSceneLifecycle.js` patches the generated AppDelegate + Info.plist to use Expo's `ExpoAppSceneDelegate` (mirrors the SDK 58 template). Remove the plugin when upgrading to SDK 58.
 - **Xcode 27 has no Simulator.app**: simulators are shown in Device Hub (`open -b com.apple.dt.Devices`). `scripts/dev.sh` boots the device with `simctl`, then opens Device Hub.
+- **Chat scrolling and keyboard (`app/chat.tsx`):** the composer is padded by the keyboard's height directly. `KeyboardAvoidingView` under a native header needs the header height, which is still a default while a push runs. The list is a `ScrollView`: `FlatList.scrollToEnd` estimates from measured cells, so a plan card that has just arrived stays below the fold.
+- **Metro red box:** after a syntax error the app once came back with light tokens over dark native views; a relaunch fixed it. Seen once, in dev only, and not reproduced.
 - **Local HTTP clients here go through a SOCKS proxy.** Use `websockets.connect(..., proxy=None)` in scripts that call localhost.
 - **Ollama:**
   - Its OpenAI-compatible endpoint ignores `num_ctx`, so the context length must be set on the server (`scripts/ollama_serve.sh`); otherwise the ~4k-token prompt plus history is silently truncated.

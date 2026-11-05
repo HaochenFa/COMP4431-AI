@@ -32,12 +32,13 @@ class _Connection:
         self.ws = ws
         self.lock = asyncio.Lock()
 
-    async def send(self, event: dict[str, Any]) -> None:
+    async def send(self, event: dict[str, Any]) -> bool:
         async with self.lock:
             try:
                 await self.ws.send_json(event)
-            except Exception:  # the client went away mid-turn; the event is dropped, the turn carries on
-                pass
+                return True
+            except Exception:  # the client went away mid-turn; the turn carries on
+                return False
 
 
 live: dict[str, _Connection] = {}  # session id -> newest socket
@@ -54,16 +55,21 @@ async def chat(ws: WebSocket, session: str = "default") -> None:
     await ws.accept()
     s = sessions.get(session)
     conn = _Connection(ws)
-    live[s.id] = conn  # a turn already running for this session now streams to this socket
 
     async def emit(event: dict[str, Any]) -> None:
         # Always the session's newest socket, so a turn survives an app reload or reconnect.
-        if target := live.get(s.id):
-            await target.send(event)
+        # With none to reach, keep the event for the next one.
+        target = live.get(s.id)
+        if not target or not await target.send(event):
+            s.missed.append(event)
 
     pending = {"call_id": s.pending.ask_call_id, "cards": s.pending.cards} if s.pending else None
     await conn.send({"type": "hello", "session": s.id, "scenario": s.scenario, "model": provider.model,
-                     "waiting_for": pending["call_id"] if pending else None, "pending_ask": pending})
+                     "waiting_for": pending["call_id"] if pending else None, "pending_ask": pending,
+                     "running": s.lock.locked() or bool(s.missed), "has_history": bool(s.messages)})
+    while s.missed:
+        await conn.send(s.missed.popleft())
+    live[s.id] = conn  # a turn still running for this session now streams to this socket
     tasks: set[asyncio.Task] = set()
     try:
         while True:

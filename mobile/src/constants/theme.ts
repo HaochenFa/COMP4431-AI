@@ -108,6 +108,7 @@ export const REFUSAL_LABEL: Record<string, string> = {
   WARNING_T8: 'Typhoon signal',
   RAINSTORM: 'Rainstorm warning',
   THUNDERSTORM: 'Thunderstorm warning',
+  LANDSLIP: 'Landslip warning',
   EXTREME_HEAT: 'Too hot',
   EXCEEDS_ABILITY: 'Too hard',
   AFTER_DARK: 'Finishes after dark',

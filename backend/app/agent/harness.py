@@ -20,6 +20,11 @@ from .session import Emit, Pending, Session
 
 MAX_STEPS = 24  # a plan takes ~12 steps (a skill per phase, 3 checks, map, plan), plus retries after gate blocks
 UNUSABLE_TURN_RETRIES = 2  # re-ask when a turn is empty or writes a tool call as text (each counts as a step)
+CARD_TOOLS = {"present_plan", "refuse"}
+# Someone may be hurt: this can't wait for the model. False alarms cost one extra line.
+EMERGENCY = re.compile(r"\b(?:emergency|injur\w+|(?:is|are|got|badly) hurt|bleeding|unconscious|can'?t (?:move|breathe|walk|stand)"
+                       r"|fell|fallen|broken? (?:\w+ )?(?:leg|arm|ankle|wrist)|snake ?bite|heat ?stroke|heart attack|rescue|mayday)\b", re.I)
+EMERGENCY_LINE = "If anyone is hurt or in danger, call 999 now.\n\n"
 
 
 def build_toolbox() -> ToolBox:
@@ -61,17 +66,19 @@ class Agent:
         self.max_steps = max_steps
 
     async def handle(self, session: Session, event: dict[str, Any], emit: Emit) -> None:
-        """Entry point for one client event (user_message / card_answer / reset)."""
-        async with session.lock:
-            kind = event.get("type")
+        """Entry point for one client event (user_message / card_answer / set_scenario / reset)."""
+        kind = event.get("type")
+        if kind == "set_scenario":  # not behind the lock: a demo switch must not wait for a running turn
             session.trace({"in": event})
+            session.set_scenario(event.get("scenario") or "live")
+            await emit({"type": "scenario", "scenario": session.scenario})
+            return
+        async with session.lock:
+            session.trace({"in": event})
+            session.touch()
             if kind == "reset":
                 session.reset()
                 await emit({"type": "reset_ok"})
-                return
-            if kind == "set_scenario":
-                session.set_scenario(event.get("scenario") or "live")
-                await emit({"type": "scenario", "scenario": session.scenario})
                 return
             if kind == "card_answer":
                 if not session.pending or session.pending.ask_call_id != event.get("call_id"):
@@ -83,6 +90,8 @@ class Agent:
                 text = (event.get("text") or "").strip()
                 if not text:
                     return
+                if EMERGENCY.search(text):
+                    await emit({"type": "assistant_delta", "text": EMERGENCY_LINE})
                 if session.pending:  # user typed instead of tapping a card: treat it as the answer
                     self._resolve_pending(session, {"answers": [], "free_text": text})
                 else:
@@ -178,6 +187,7 @@ class Agent:
     ) -> tuple[str, list[dict[str, Any]]] | None:
         """Run the calls in order, appending to `results`. Returns (call_id, cards) if ask_user paused."""
         ask: tuple[str, list[dict[str, Any]]] | None = None
+        carded = False
         for call in calls:
             tool = self.toolbox.tools.get(call.name)
             await emit({"type": "tool_trace", "call_id": call.id, "name": call.name, "args": call.arguments, "status": "start"})
@@ -185,6 +195,8 @@ class Agent:
                 out = ToolOutput(f"Unknown tool {call.name!r}", is_error=True, summary="unknown tool")
             elif call.name == "ask_user" and ask:
                 out = ToolOutput("Only one ask_user per turn; merge the questions into one call.", is_error=True, summary="duplicate ask")
+            elif call.name in CARD_TOOLS and carded:  # some models send the same card several times in parallel
+                out = ToolOutput("The card is already showing; this duplicate was ignored.", summary="duplicate card")
             else:
                 if errors := _schema_errors(call.arguments, tool.spec.parameters):
                     # Every problem with its path, so the model can fix them all in one retry.
@@ -194,6 +206,7 @@ class Agent:
                         out = await tool.handler(call.arguments, ToolContext(session, emit, call.id))
                     except Exception as e:  # a tool failure is reported to the model, not raised
                         out = ToolOutput(f"{type(e).__name__}: {e}", is_error=True, summary="tool failed")
+            carded = carded or (call.name in CARD_TOOLS and not out.is_error)
             status = "blocked" if out.blocked else "error" if out.is_error else "waiting" if out.pause else "ok"
             await emit({"type": "tool_trace", "call_id": call.id, "name": call.name, "status": status, "summary": out.summary})
             if out.pause:

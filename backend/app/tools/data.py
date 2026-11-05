@@ -29,9 +29,50 @@ def trails() -> dict[str, dict[str, Any]]:
     return {t["id"]: t for t in json.loads((DATA / "trails.json").read_text())}
 
 
+# English names for landmarks the official (Chinese) descriptions mention, so a search finds "Dragon's Back"
+# (港島徑第八段 never says it in English). Only names that mean one place: 大浪灣 and 西灣 are each two
+# different bays, so they're left out.
+LANDMARKS = {
+    "龍脊": "Dragon's Back", "獅子山": "Lion Rock", "大帽山": "Tai Mo Shan", "鳳凰山": "Lantau Peak",
+    "大東山": "Sunset Peak", "馬鞍山": "Ma On Shan", "八仙嶺": "Pat Sin Leng", "飛鵝山": "Kowloon Peak",
+    "太平山": "Victoria Peak", "蚺蛇尖": "Sharp Peak", "釣魚翁": "High Junk Peak", "紫羅蘭山": "Violet Hill",
+    "孖崗山": "The Twins (Twin Peaks)", "針山": "Needle Hill", "草山": "Grassy Hill", "望夫石": "Amah Rock",
+    "筆架山": "Beacon Hill", "九龍坑山": "Cloudy Hill", "大老山": "Tate's Cairn", "柏架山": "Mount Parker",
+    "渣甸山": "Jardine's Lookout", "畢拿山": "Mount Butler", "水牛山": "Buffalo Hill",
+    "城門水塘": "Shing Mun Reservoir", "萬宜水庫": "High Island Reservoir", "昂坪": "Ngong Ping", "大澳": "Tai O",
+    "荔枝窩": "Lai Chi Wo",
+}
+# Descriptions that only compare with a landmark elsewhere, and famous ones a description never names.
+NOT_ON_ROUTE = {"ws_4": {"Victoria Peak"}, "cty_13": {"Sharp Peak"}, "cty_31": {"High Island Reservoir"}}
+ALSO_ON_ROUTE = {"mc_2": {"蚺蛇尖"}, "mc_5": {"獅子山"}}
+
+
+def landmarks_zh(t: dict[str, Any]) -> list[str]:
+    """The LANDMARKS keys a trail passes."""
+    text = (t.get("name_zh") or "") + (t.get("description_zh") or "")
+    extra, skip = ALSO_ON_ROUTE.get(t["id"], set()), NOT_ON_ROUTE.get(t["id"], set())
+    return [zh for zh, en in LANDMARKS.items() if (zh in text or zh in extra) and en not in skip]
+
+
+def landmarks(t: dict[str, Any]) -> list[str]:
+    return [LANDMARKS[zh] for zh in landmarks_zh(t)]
+
+
+def walking_hours(t: dict[str, Any]) -> tuple[float | None, bool]:
+    """(hours, estimated): the official time, or for the trails AFCD gives none, Naismith's rule from the
+    official length and GPX climb (4 km/h plus 10 minutes per 100 m), to the quarter hour."""
+    if (h := t.get("official_hours")) is not None:
+        return h, False
+    if (km := t.get("length_km")) is None:
+        return None, False
+    climb = (profiles().get(t["id"]) or {}).get("ascent_m", 0)
+    return max(0.25, round((km / 4 + climb / 600) * 4) / 4), True
+
+
 _TRKPT = re.compile(r'<trkpt\s+lat="([-\d.]+)"\s+lon="([-\d.]+)"\s*>\s*(?:<ele>([-\d.]+)</ele>)?')
 ASCENT_HYSTERESIS_M = 5  # the GPX heights are integer DEM samples: ignore wiggles smaller than this
 PROFILE_POINTS = 120
+NODATA_M = -100  # the sea off an island trail comes through as -9999; HK's lowest track point is at sea level
 
 
 def _gpx(tid: str) -> list[tuple[float, float, float | None]]:
@@ -39,7 +80,8 @@ def _gpx(tid: str) -> list[tuple[float, float, float | None]]:
     path = DATA / "gpx" / f"{tid}.gpx"
     if not path.exists():
         return []
-    return [(float(lat), float(lng), float(ele) if ele else None) for lat, lng, ele in _TRKPT.findall(path.read_text())]
+    pts = [(float(lat), float(lng), float(ele) if ele else None) for lat, lng, ele in _TRKPT.findall(path.read_text())]
+    return [p for p in pts if p[2] is None or p[2] > NODATA_M]
 
 
 def _km(a: tuple[float, ...], b: tuple[float, ...]) -> float:

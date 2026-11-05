@@ -11,6 +11,7 @@ export type TrailPick = {
   start?: string;
   start_coord?: LatLng | null;
   profile?: ElevationProfile | null;
+  hours_estimated?: boolean; // AFCD gives no official time: `hours` comes from the length and climb
 };
 
 // From the official GPX (backend/app/tools/data.py profiles()); null when the GPX has no heights.
@@ -36,6 +37,9 @@ export type TripPlan = {
   sunset: string;
   weather_summary: string;
   citations: Citation[];
+  // Added by the server when the card is emitted.
+  provisional?: boolean; // no HKO forecast for the date yet
+  scenario?: string; // made under a demo scenario
 };
 
 export type Refusal = {
@@ -46,6 +50,7 @@ export type Refusal = {
   summary: string;
   evidence: Citation[];
   counterfactual?: string | null;
+  scenario?: string; // made under a demo scenario
 };
 
 export type QuestionCard = { id: string; type: 'single' | 'multi' | 'text'; prompt: string; options?: string[] };
@@ -73,6 +78,8 @@ export type ServerEvent =
       model: string;
       waiting_for: string | null;
       pending_ask: { call_id: string; cards: QuestionCard[] } | null;
+      running: boolean; // a turn is still going, or its events follow this message
+      has_history: boolean;
     }
   | { type: 'assistant_delta'; text: string }
   | { type: 'assistant_reset' } // the model's turn was re-issued: drop the text streamed so far
@@ -126,6 +133,17 @@ export type TrailSummary = {
   photo: boolean;
   /** English names of landmarks the official (Chinese) description mentions, e.g. "Dragon's Back". */
   landmarks: string[];
+  /** The Chinese trail name and those landmarks, for the search box. */
+  search_zh: string[];
+};
+
+/** GET /closures: what AFCD lists for a trail, from the same check the agent runs. Trails with nothing listed are left out. */
+export type TrailClosure = {
+  closed: boolean;
+  partial?: boolean;
+  effective?: string;
+  expected_expiry?: string;
+  diversion?: { status?: string; effective?: string; expected_expiry?: string; note?: string };
 };
 
 export type TrailDetail = {

@@ -8,3 +8,4 @@ description: Query the official trail set with filters derived from constraints.
 3. For scenery and features (sea view, waterfall, war relics, shade, birds), call search_knowledge with the user's wish as the query and your filtered candidates as trail_ids. The passages are official descriptions in Chinese; translate what you use. Don't claim a feature no passage supports. If it's unavailable, read 2-4 candidates with get_trail instead.
 4. If the user names a specific trail ("Chi Ma Wan", "Dragon's Back"), look it up with search_trails(text=...) even if it breaks the constraints. You will need its official figures to explain why not.
    Dragon's Back is part of Hong Kong Trail Section 8.
+5. Wheelchairs, strollers or anyone who needs step-free access: search_trails(text="wheel") first. Only call a trail accessible if its name or official description says so. If none fits, say you can't confirm one rather than suggesting a trail you have no evidence for.

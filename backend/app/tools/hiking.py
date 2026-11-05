@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from datetime import date, timedelta
 from typing import Any
 
@@ -15,11 +16,16 @@ NO_GO_WARNINGS = {
     "WTCSGNL": lambda code: not code.startswith(("TC1", "TC3")),  # T8 and above
     "WRAIN": lambda code: True,  # amber / red / black rainstorm
     "WTS": lambda code: True,  # thunderstorm
+    "WL": lambda code: True,  # landslip: HKO's advice is to keep away from slopes
     # WHOT (Very Hot Weather) is reported in warnings_in_force but not an automatic no-go:
-    # hike-safety decides from duration and shade (EXTREME_HEAT).
+    # hike-safety decides from duration and shade (EXTREME_HEAT). So are flood, fire and monsoon notices.
 }
+# How many days past today a warning in force rules out. Rainstorm and thunderstorm warnings are nowcasts
+# good for hours, so the forecast decides tomorrow; a typhoon signal lasts, and slopes stay saturated.
+NO_GO_REACH_DAYS = {"WTCSGNL": 1, "WL": 1, "WRAIN": 0, "WTS": 0}
 
 # Demo scenario overrides (session.scenario). Clearly labelled in the tool result.
+SCENARIO_DAYS = 3  # a storm passes: later dates fall back to the forecast, so a refusal can offer one
 SCENARIO_WARNINGS: dict[str, dict[str, dict[str, str]]] = {
     "t8": {"WTCSGNL": {"name": "Tropical Cyclone Warning Signal", "code": "TC8NE", "type": "No. 8 Northeast Gale or Storm Signal"}},
     "rainstorm": {"WRAIN": {"name": "Rainstorm Warning Signal", "code": "WRAINR", "type": "Red"}},
@@ -40,12 +46,14 @@ def _elevation(tid: str) -> dict[str, Any] | None:
 
 def _brief(t: dict[str, Any]) -> dict[str, Any]:
     prof = data.profiles().get(t["id"]) or {}
+    hours, estimated = data.walking_hours(t)
     return {
         "id": t["id"],
         "name": t["name"],
         "region": t["region"],
         "length_km": t["length_km"],
-        "hours": t.get("official_hours"),
+        "hours": hours,
+        **({"hours_estimated": True} if estimated else {}),
         "stars": t.get("stars"),
         "difficulty": t["difficulty"],
         "start": t["start"],
@@ -55,11 +63,31 @@ def _brief(t: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def _searchable(t: dict[str, Any]) -> str:
+    """Names people actually search for: the official ones in both languages, and the landmarks on the way."""
+    names = (t["name"], t["trail"], t["start"], t["finish"], t.get("name_zh"), *data.landmarks_zh(t), *data.landmarks(t))
+    return " ".join(s for s in names if s).lower()
+
+
+def _one_line(text: str, limit: int = 80) -> str:
+    """The first sentence, cut at a word boundary."""
+    first = re.split(r"(?<=[.!?])\s", text.strip(), maxsplit=1)[0].rstrip(".")
+    return first if len(first) <= limit else first[:limit].rsplit(" ", 1)[0] + "…"
+
+
+def _weather_line(text: str, forecast: dict[str, Any]) -> str:
+    """The forecast as one line of HKO's own figures, for the plan card."""
+    low, high = forecast.get("min_c"), forecast.get("max_c")
+    temps = f"{low}–{high}°C" if low is not None and high is not None else f"High {high}°C" if high is not None else ""
+    return " · ".join(s for s in (_one_line(text), temps, (forecast.get("wind") or "").rstrip(".")) if s)
+
+
 def register(box: ToolBox) -> None:
     @box.register(
         "search_trails",
         "Filter the official AFCD trail set (152 sections). Returns brief records sorted by walking time. "
-        "Numbers here are official (hiking.gov.hk); quote them, never estimate your own.",
+        "Numbers here are official (hiking.gov.hk); quote them, never estimate your own. Where AFCD gives no walking time, "
+        "hours is computed from the official length and climb and hours_estimated is true.",
         obj(
             {
                 "region": {"type": "string", "description": "One of: Hong Kong Island, Lantau Island, Sai Kung, North New Territories, Central New Territories, West New Territories (substring match, e.g. 'New Territories')"},
@@ -68,7 +96,7 @@ def register(box: ToolBox) -> None:
                 "max_stars": {"type": "integer", "minimum": 1, "maximum": 5},
                 "min_stars": {"type": "integer", "minimum": 1, "maximum": 5},
                 "max_ascent_m": {"type": "number", "description": "Total climb ceiling in metres (from the official GPX). Trails without height data are kept, with ascent_m null"},
-                "text": {"type": "string", "description": "Substring of the English trail name, start or finish"},
+                "text": {"type": "string", "description": "A trail name, start, finish or landmark on the way, in English or Chinese, e.g. 'Sharp Peak', 'Lion Rock', '獅子山'"},
                 "sort": {"type": "string", "enum": ["longest", "shortest"], "description": "By official hours; default longest first"},
                 "limit": {"type": "integer", "minimum": 1, "maximum": 25},
             }
@@ -76,12 +104,13 @@ def register(box: ToolBox) -> None:
     )
     async def search_trails(args: dict[str, Any], ctx: ToolContext) -> ToolOutput:
         rows = list(data.trails().values())
+        hours = {t["id"]: data.walking_hours(t)[0] for t in rows}
         if r := args.get("region"):
             rows = [t for t in rows if r.lower() in (t["region"] or "").lower()]
         if (h := args.get("max_hours")) is not None:
-            rows = [t for t in rows if t.get("official_hours") is not None and t["official_hours"] <= h]
+            rows = [t for t in rows if hours[t["id"]] is not None and hours[t["id"]] <= h]
         if (h := args.get("min_hours")) is not None:
-            rows = [t for t in rows if t.get("official_hours") is not None and t["official_hours"] >= h]
+            rows = [t for t in rows if hours[t["id"]] is not None and hours[t["id"]] >= h]
         if (s := args.get("max_stars")) is not None:
             rows = [t for t in rows if t.get("stars") is not None and t["stars"] <= s]
         if (s := args.get("min_stars")) is not None:
@@ -90,9 +119,9 @@ def register(box: ToolBox) -> None:
             prof = data.profiles()
             rows = [t for t in rows if t["id"] not in prof or prof[t["id"]]["ascent_m"] <= a]
         if q := (args.get("text") or "").lower():
-            rows = [t for t in rows if q in f'{t["name"]} {t["start"]} {t["finish"]}'.lower()]
+            rows = [t for t in rows if q in _searchable(t)]
         sign = 1 if args.get("sort") == "shortest" else -1
-        rows.sort(key=lambda t: (t.get("official_hours") is None, sign * (t.get("official_hours") or 0)))
+        rows.sort(key=lambda t: (hours[t["id"]] is None, sign * (hours[t["id"]] or 0)))
         out = [_brief(t) for t in rows[: args.get("limit", 12)]]
         return ToolOutput({"count": len(rows), "trails": out, "note": "ascent_m / max_m: total climb and highest point from "
                            "the official GPX; null means no height data (unknown, not flat)."}, summary=f"{len(rows)} trails match")
@@ -100,14 +129,16 @@ def register(box: ToolBox) -> None:
     @box.register(
         "get_trail",
         "Full official record for one trail: length, official walking time, star ratings, start/finish, "
-        "elevation (total ascent and highest point, from the official GPX), the official page URL (cite it) and the Chinese description.",
+        "elevation (total ascent and highest point, from the official GPX), the official page URL (cite it) and the Chinese description. "
+        "Where official_hours is missing, estimated_hours is computed from the official length and climb.",
         obj({"id": {"type": "string"}}, ["id"]),
     )
     async def get_trail(args: dict[str, Any], ctx: ToolContext) -> ToolOutput:
         t = data.trails().get(args["id"])
         if not t:
             return ToolOutput(f"Unknown trail id {args['id']!r}", is_error=True, summary="unknown trail")
-        return ToolOutput({**t, "elevation": _elevation(t["id"])}, summary=t["name"])
+        hours, estimated = data.walking_hours(t)
+        return ToolOutput({**t, "elevation": _elevation(t["id"]), **({"estimated_hours": hours} if estimated else {})}, summary=t["name"])
 
     @box.register(
         "search_knowledge",
@@ -196,20 +227,20 @@ def register(box: ToolBox) -> None:
         d = _parse_date(args["date"])
         today = data.today_hk()
         if d < today:
-            return ToolOutput(f"{d} is in the past; today is {today}", is_error=True, summary="date in the past")
-        out: dict[str, Any] = {"date": d.isoformat(), "source": "Hong Kong Observatory Open Data"}
+            return ToolOutput(f"{d} is in the past; today is {today}. Say so in plain text and ask for a new date; "
+                              "don't call present_plan or refuse.", is_error=True, summary="date in the past")
+        iso = d.isoformat()
+        out: dict[str, Any] = {"date": iso, "source": "Hong Kong Observatory Open Data"}
         led = ctx.session.ledger
         scenario = ctx.session.scenario
-        if d > today + timedelta(days=9) and scenario not in SCENARIO_WARNINGS:
+        if d > today + timedelta(days=9):
             # Not an error: the check was made; there is simply no official forecast yet.
-            led.weather_dates.add(d.isoformat())
-            led.no_go[d.isoformat()], led.warnings[d.isoformat()] = [], []
+            led.weather_dates.add(iso)
+            led.no_go[iso], led.warnings[iso] = [], []
             out.update(forecast=None, warnings_in_force={}, no_go_warnings=[],
                        note=f"Beyond the HKO 9-day window (ends {today + timedelta(days=9)}). Plan provisionally and tell the user to re-check nearer the date.")
             return ToolOutput(out, summary="beyond 9-day forecast")
-        if d > today + timedelta(days=9):
-            out["forecast"] = None
-        elif d == today:
+        if d == today:
             flw, _ = await data.hko("flw")
             out["forecast"] = {"desc": flw.get("forecastDesc"), "outlook": flw.get("outlook"), "update_time": flw.get("updateTime")}
         else:
@@ -226,34 +257,50 @@ def register(box: ToolBox) -> None:
             out["update_time"] = fnd.get("updateTime")
             out.update({k: v for k, v in meta.items() if k == "stale"})
 
+        in_force = {}
         if scenario in SCENARIO_WARNINGS:
-            warnings = SCENARIO_WARNINGS[scenario]
-            applies = True  # a demo scenario simulates the warning on the requested date
-            out["note"] = f"Demo scenario override active: {scenario}. These warnings apply to {d.isoformat()}."
-            out["warnings_apply_to"] = d.isoformat()
+            # A demo scenario simulates the warning on the days the hike could be: the storm passes after that.
+            warnings = SCENARIO_WARNINGS[scenario] if d <= today + timedelta(days=SCENARIO_DAYS) else {}
+            applies, in_force = True, warnings
+            out["note"] = f"Demo scenario override active: {scenario}. The app labels it; don't mention it in your reply."
+            out["warnings_apply_to"] = f"{today} to {today + timedelta(days=SCENARIO_DAYS)}"
         else:
             warnsum, _ = await data.hko("warnsum", ttl=120)
             warnings = {k: {"name": v.get("name"), "code": v.get("code"), "type": v.get("type"),
                             **({"issued": v["issueTime"]} if v.get("issueTime") else {})}
                         for k, v in (warnsum or {}).items() if v.get("actionCode") != "CANCEL"}
             applies = d <= today + timedelta(days=1)
-            out["warnings_apply_to"] = "now (HKO issues warnings in real time; they apply to today and the next morning only)"
+            in_force = {k: w for k, w in warnings.items() if k in NO_GO_REACH_DAYS and d <= today + timedelta(days=NO_GO_REACH_DAYS[k])}
+            out["warnings_apply_to"] = ("now (HKO issues warnings in real time: typhoon signals and landslip warnings "
+                                        "cover today and tomorrow, rainstorm and thunderstorm warnings today only)")
         out["warnings_in_force"] = warnings
-        no_go = [w["code"] for k, w in warnings.items() if k in NO_GO_WARNINGS and NO_GO_WARNINGS[k](w.get("code") or "")]
-        out["no_go_warnings"] = no_go if applies else []
-        forecast = out.get("forecast") or {}
-        led.weather_dates.add(d.isoformat())
-        led.no_go[d.isoformat()] = out["no_go_warnings"]
-        led.warnings[d.isoformat()] = [w.get("code") or k for k, w in warnings.items()] if applies else []
-        led.forecast[d.isoformat()] = " ".join(str(forecast.get(k) or "") for k in ("weather", "desc", "outlook"))
+        out["no_go_warnings"] = [w["code"] for k, w in in_force.items() if k in NO_GO_WARNINGS and NO_GO_WARNINGS[k](w.get("code") or "")]
+
+        forecast: dict[str, Any] = out.get("forecast") or {}
+        text = forecast.get("weather") or forecast.get("desc")
+        if not text and scenario == "clear":  # the offline demo: the frozen seed has no forecast for today's dates
+            text = "Fine (demo override: no live forecast)"
+            forecast = out["forecast"] = {"weather": text}
+        if not text and not out["no_go_warnings"]:
+            # Inside the 9-day window with nothing for this date (feed down, only an old seed): nothing was
+            # checked, so it must not read as checked. The gate stays shut until a real forecast comes back.
+            out["error"] = "HKO has no forecast for this date right now. Tell the user the weather can't be checked; don't present a plan."
+            return ToolOutput(out, summary="forecast unavailable", is_error=True)
+
+        led.weather_dates.add(iso)
+        led.no_go[iso] = out["no_go_warnings"]
+        led.warnings[iso] = [w.get("code") or k for k, w in warnings.items()] if applies else []
+        # Not the outlook: on today's forecast that is about the days after.
+        led.forecast[iso] = str(text or "")
+        led.weather_line[iso] = _weather_line(text, forecast) if text else ""
         if isinstance(forecast.get("max_c"), (int, float)):
-            led.max_c[d.isoformat()] = forecast["max_c"]
-        summary = forecast.get("weather") or forecast.get("desc") or "forecast"
+            led.max_c[iso] = forecast["max_c"]
+        summary = _one_line(text) if text else "forecast"
         if out["no_go_warnings"]:
             summary = f"WARNING {', '.join(out['no_go_warnings'])}"
-        elif warnings and not applies:
-            summary = f"{summary} (warnings now, not on {d.isoformat()})"
-        return ToolOutput(out, summary=str(summary)[:80])
+        elif (warnings and not applies) or any(k in NO_GO_REACH_DAYS and k not in in_force for k in warnings):
+            summary = f"{summary} (warnings now, not on {iso})"
+        return ToolOutput(out, summary=summary)
 
     @box.register(
         "get_daylight",

@@ -8,8 +8,10 @@ COMP4431 group project (2026/27): a domain-specific chatbot for planning Hong Ko
 | _TODO_ | _TODO_ |
 
 Trailhead is a pre-trip feasibility agent. You describe a hike loosely ("Saturday, half day, sea view, it rained last night"). It asks what's missing, checks official AFCD trail data, live HKO weather, sunset times and AFCD closures, and then returns one of two things:
-- a day plan, drawn on a map, with every figure cited, or
+- a day plan, drawn on a map, with every trail, weather and sunset figure cited, or
 - a no-go card that gives the evidence and an alternative.
+
+There is no transport data yet, so travel to and from a trail is shown as an approximate block with no route numbers.
 
 ## Features
 
@@ -18,7 +20,7 @@ Trailhead is a pre-trip feasibility agent. You describe a hike loosely ("Saturda
 
 **Additional**
 - **Provider-agnostic agent harness.** One loop runs on the Anthropic Messages API, OpenAI Chat Completions (and any OpenAI-compatible server: xAI Grok, DeepSeek, OpenRouter, Ollama), or the OpenAI Responses API (OpenAI or xAI). You switch with `LLM_PROFILE` in `backend/config.yaml`.
-- **Safety gate.** `present_plan` and `refuse` are blocked until the agent has actually checked closures and weather (and sunset, for plans) for those trails on that date. A plan is also blocked when any of its figures (km, official hours, sunset) differ from what the tools returned.
+- **Safety gate.** `present_plan` and `refuse` are blocked until the agent has actually checked closures and weather (and sunset, for plans) for those trails on that date. A plan is also blocked when any of its figures (km, hours, sunset) differ from what the tools returned, or when it names a transport route no tool returned. Plans beyond the HKO 9-day forecast are marked Provisional, not Go.
 - **Question cards.** When information is missing, the agent pauses and shows single-choice, multiple-choice or free-text cards. It resumes when you answer.
 - **Trail knowledge search (RAG).** `search_knowledge` embeds the official hiking.gov.hk trail descriptions (Chinese) with a local multilingual model (bge-m3), so "sea views" or "WWII relics" in English finds the right trails. It ranks only the trails that already passed the hard filters, and the plan cites the passage it relied on.
 - **Elevation profiles.** Total climb and high point come from the official GPX tracks (smoothed, so DEM noise doesn't inflate the climb). They're searchable ("not too steep") and drawn as a chart on the plan card.
@@ -27,7 +29,7 @@ Trailhead is a pre-trip feasibility agent. You describe a hike loosely ("Saturda
 - **Skills.** Step-by-step procedures (intake, search, recommend, plan, maps, safety) that the agent loads only when needed.
 - **Official live data.**
   - AFCD *Hiking Trails in Country Parks*: 152 sections, geometry and GPX tracks.
-  - Official walking times and star ratings from hiking.gov.hk.
+  - Official walking times and star ratings from hiking.gov.hk. The 25 trails with no official time get one computed from their official length and climb, labelled as an estimate.
   - AFCD *Closed Trails in Country Parks*.
   - HKO 9-day forecast, current warnings, and sunrise/sunset times.
   - Every live feed has a disk-snapshot fallback so the app still works offline.
@@ -37,8 +39,8 @@ Trailhead is a pre-trip feasibility agent. You describe a hike loosely ("Saturda
   - Plan page: official AFCD photo, stats, the safety checks the server enforces, a scrubbable elevation profile, the route map, sources, and one-tap follow-ups ("Shorter", "Less climbing").
   - Trails tab: browse and search all 152 official trails, list or map, each with its own page and a "Plan this hike" hand-off to the agent.
   - Native iOS: SF Symbols, Liquid Glass tab bar and controls, Apple Maps; dark by default, with a light mode for projectors (Settings → Appearance).
-- **Voice.** Tap the mic to speak your request (on-device speech recognition, live transcript); the app reads the plan aloud (text-to-speech).
-- **Demo scenarios.** Settings → Demo scenario injects a T8 signal, a red rainstorm, a thunderstorm or a trail closure, so a refusal can be shown on cue.
+- **Voice.** Tap the mic to speak your request (Apple speech recognition, live transcript); the app reads the plan aloud (text-to-speech).
+- **Demo scenarios.** Settings → Demo scenario injects a T8 signal, a red rainstorm, a thunderstorm or a trail closure for the next 3 days, so a refusal can be shown on cue. Anything made under one carries a Demo label. "Clear skies" also lets you plan with no network: the committed forecast seed covers old dates only, so a live scenario refuses to plan without a real forecast.
 
 ## Run it
 
@@ -114,7 +116,7 @@ In the app, open Settings (gear on the Plan tab) and set the backend URL:
 backend/   FastAPI app: app/llm (3 provider adapters + embeddings), app/agent (harness, session, prompts), app/tools, app/skills; eval/
 mobile/    Expo app: src/app (tabs, chat, plan, trail, map, settings), src/components (ui, chat, trail, plan), src/lib (protocol, state, REST)
 data/      trails.json, trails_raw.geojson, gpx/, snapshots/ (from scripts/ingest_afcd.py); knowledge.json (scripts/build_knowledge.py); photos/ (scripts/fetch_photos.py)
-docs/      spec, architecture poster
+docs/      project spec
 ```
 
 Data sources: AFCD (DATA.GOV.HK / CSDI), hiking.gov.hk, and the Hong Kong Observatory Open Data API.

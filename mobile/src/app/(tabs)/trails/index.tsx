@@ -10,7 +10,7 @@ import { useTheme } from '@/constants/theme';
 import { useTrails } from '@/lib/trails';
 import type { TrailSummary } from '@/lib/types';
 
-const DIFFICULTIES = ['Easy', 'Moderate', 'Demanding', 'Difficult'];
+const DIFFICULTIES = ['Easy', 'Moderate', 'Demanding', 'Difficult', 'Unrated'];
 const REGIONS: [string, string][] = [
   ['Hong Kong Island', 'HK Island'],
   ['Lantau Island', 'Lantau'],
@@ -18,7 +18,11 @@ const REGIONS: [string, string][] = [
   ['North New Territories', 'North NT'],
   ['Central New Territories', 'Central NT'],
   ['West New Territories', 'West NT'],
+  ['Peng Chau', 'Peng Chau'],
 ];
+
+const matchesDifficulty = (t: TrailSummary, wanted: string) =>
+  t.difficulty === wanted || (wanted === 'Difficult' && t.difficulty === 'Very difficult') || (wanted === 'Unrated' && t.difficulty === 'NA');
 
 /** Browse the official AFCD trails: a list first, the map one tap away (the AllTrails pattern). */
 export default function Trails() {
@@ -34,9 +38,9 @@ export default function Trails() {
   const q = query.trim().toLowerCase();
   const shown = (list ?? []).filter(
     (t) =>
-      (!difficulty || t.difficulty === difficulty || (difficulty === 'Difficult' && t.difficulty === 'Very difficult')) &&
+      (!difficulty || matchesDifficulty(t, difficulty)) &&
       (!region || t.region === region) &&
-      (!q || [t.name, t.trail, t.start, t.finish, t.region, ...t.landmarks].some((s) => s?.toLowerCase().includes(q))),
+      (!q || [t.name, t.trail, t.start, t.finish, t.region, ...t.landmarks, ...t.search_zh].some((s) => s?.toLowerCase().includes(q))),
   );
   // Found by a landmark, not its name ("Dragon" → Hong Kong Trail · Section 8): say which one.
   const note = (t: TrailSummary) => (q ? t.landmarks.find((l) => l.toLowerCase().includes(q)) : undefined);
@@ -140,7 +144,7 @@ export default function Trails() {
             style={StyleSheet.absoluteFill}
             pins={shown.filter((t) => t.start_coord).map((t) => ({ id: t.id, coord: t.start_coord!, title: t.name, selected: t.id === selected }))}
             onPinPress={setSelected}
-            padding={{ top: 220, right: 40, bottom: 200, left: 40 }}
+            padding={{ top: 190, right: 24, bottom: 170, left: 24 }}
           />
           <View style={[styles.mapTop, { top: insets.top + 56 }]} pointerEvents="box-none">
             {search}

@@ -1,14 +1,13 @@
 import { Stack, router } from 'expo-router';
 import { useRef, useState } from 'react';
-import { ActivityIndicator, ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
-import Animated, { useAnimatedReaction, useAnimatedScrollHandler, useSharedValue } from 'react-native-reanimated';
+import { ActivityIndicator, FlatList, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { scheduleOnRN } from 'react-native-worklets';
+import type { SearchBarCommands } from 'react-native-screens';
 
 import { TrailFeature, TrailRow } from '@/components/trail/trail-row';
 import { TrailMap } from '@/components/trail/trail-map';
-import { TrailSearch, landmarkNote, matchesQuery, type Rect } from '@/components/trail/trail-search';
-import { Button, Chip, Glass, Icon, SearchField, T } from '@/components/ui';
+import { TrailResults, landmarkNote, matchesQuery } from '@/components/trail/trail-search';
+import { Button, Chip, Glass, Icon, T } from '@/components/ui';
 import { useTheme } from '@/constants/theme';
 import { useTrails } from '@/lib/trails';
 import type { TrailSummary } from '@/lib/types';
@@ -24,12 +23,8 @@ const REGIONS: [string, string][] = [
   ['Peng Chau', 'Peng Chau'],
 ];
 
-// Where the list's search field ends (the header's 4 pt padding, then the 46 pt field), and the compact navigation
-// bar's height under the status bar (iOS 26). Scroll events report the header's inset as 0, so the list's position
-// under the bar comes from these.
-const SEARCH_BOTTOM = 50;
+// The compact navigation bar's height under the status bar (iOS 26): the search results start below it.
 const NAV_BAR = 54;
-const TOOLBAR_BUTTON = 52; // one button's share of the header's glass capsule
 
 const matchesDifficulty = (t: TrailSummary, wanted: string) =>
   t.difficulty === wanted || (wanted === 'Difficult' && t.difficulty === 'Very difficult') || (wanted === 'Unrated' && t.difficulty === 'NA');
@@ -44,39 +39,15 @@ export default function Trails() {
   const [mode, setMode] = useState<'list' | 'map'>('list');
   const [selected, setSelected] = useState<string | null>(null);
   const insets = useSafeAreaInsets();
-  const barBottom = insets.top + NAV_BAR;
 
-  // Search is a mode over the list (see TrailSearch): opened from the list's field, or from a header button once
-  // that field has scrolled away, and it grows out of whichever was tapped. The list itself is never filtered by the
-  // query, so it keeps its place. `open` turns false on close; the mode ends once the field has shrunk back.
-  const [search, setSearch] = useState<{ from: Rect; open: boolean } | null>(null);
-  const fieldRef = useRef<View>(null);
-  const { width } = useWindowDimensions();
-  const openFromField = () => fieldRef.current?.measureInWindow((x, y, w, h) => setSearch({ from: { x, y, width: w, height: h }, open: true }));
-  // The header's toolbar buttons can't be measured; the search button sits left of the map button in their capsule.
-  const openFromButton = () => setSearch({ from: { x: width - 16 - 2 * TOOLBAR_BUTTON, y: insets.top, width: TOOLBAR_BUTTON, height: 44 }, open: true });
-  const searching = Boolean(search?.open);
-  const [searchAway, setSearchAway] = useState(false);
-  const scrolled = useSharedValue(0);
-  const onScroll = useAnimatedScrollHandler((e) => {
-    scrolled.set(e.contentOffset.y + barBottom);
-  });
-  useAnimatedReaction(
-    () => scrolled.get() > SEARCH_BOTTOM,
-    (away, was) => {
-      if (away !== was) scheduleOnRN(setSearchAway, away);
-    },
-  );
-  const closeSearch = () => setSearch((s) => s && { ...s, open: false });
-  const endSearch = () => {
-    setSearch(null);
-    setQuery('');
-  };
-  const toggleMode = () => {
-    setQuery(''); // the map filters by it as you type; the list starts again unfiltered, at its top
-    scrolled.set(0);
-    setSearchAway(false);
-    setMode(mode === 'list' ? 'map' : 'list');
+  // Search is the system's: a Liquid Glass button in the header that morphs into a field (Stack.SearchBar). On the
+  // list, its results show over the list (TrailResults), which is never filtered by the query and so keeps its
+  // place; on the map, the query filters the pins as you type.
+  const searchBar = useRef<SearchBarCommands>(null);
+  const [searching, setSearching] = useState(false);
+  const pickPlace = (name: string) => {
+    searchBar.current?.setText(name);
+    setQuery(name);
   };
 
   const onMap = mode === 'map';
@@ -114,10 +85,6 @@ export default function Trails() {
   );
   const header = (
     <View style={styles.filters}>
-      {/* Hidden while search is up: the search field grows out of it and shrinks back into it. */}
-      <View ref={fieldRef} collapsable={false} style={search ? styles.hidden : undefined}>
-        <SearchField value="" onChangeText={setQuery} placeholder="Search by name or place" onPress={openFromField} />
-      </View>
       {filters}
       <T v="footnote" color="text2">
         {list ? `${filtered.length} official ${filtered.length === 1 ? 'trail' : 'trails'}` : ' '}
@@ -127,20 +94,29 @@ export default function Trails() {
 
   return (
     <>
-      {/* Search is our own glass field, not the header's: the native one only turns to glass once focused.
-          While searching, the large title gives way so the field sits right under the bar, as a search controller does. */}
-      <Stack.Screen options={{ headerLargeTitle: !onMap && !searching }} />
-      {!search ? (
-        <Stack.Toolbar placement="right">
-          {!onMap && searchAway ? <Stack.Toolbar.Button icon="magnifyingglass" onPress={openFromButton} accessibilityLabel="Search trails" /> : null}
-          <Stack.Toolbar.Button icon={onMap ? 'list.bullet' : 'map'} onPress={toggleMode} accessibilityLabel={onMap ? 'Show as list' : 'Show on map'} />
-        </Stack.Toolbar>
-      ) : null}
+      <Stack.Screen options={{ headerLargeTitle: !onMap }} />
+      <Stack.SearchBar
+        ref={searchBar}
+        placement="integratedButton"
+        allowToolbarIntegration={false}
+        placeholder="Search by name or place"
+        autoCapitalize="none"
+        hideWhenScrolling={false}
+        obscureBackground={false}
+        onFocus={() => setSearching(true)}
+        onChangeText={(e) => setQuery(e.nativeEvent.text)}
+        // Fired by the glass X too, via patches/react-native-screens (iOS 26 sends nothing otherwise).
+        onCancelButtonPress={() => {
+          setSearching(false);
+          setQuery('');
+        }}
+      />
+      <Stack.Toolbar placement="right">
+        <Stack.Toolbar.Button icon={onMap ? 'list.bullet' : 'map'} onPress={() => setMode(onMap ? 'list' : 'map')} accessibilityLabel={onMap ? 'Show as list' : 'Show on map'} />
+      </Stack.Toolbar>
       {!onMap ? (
         <View style={styles.flex}>
-          <Animated.FlatList
-            onScroll={onScroll}
-            scrollEventThrottle={16}
+          <FlatList
             style={{ backgroundColor: c.bg }}
             contentInsetAdjustmentBehavior="automatic"
             data={filtered}
@@ -174,18 +150,14 @@ export default function Trails() {
               )
             }
           />
-          {search ? (
-            <TrailSearch
+          {searching ? (
+            <TrailResults
               trails={filtered}
               query={query}
-              onChangeQuery={setQuery}
-              open={search.open}
-              from={search.from}
-              top={barBottom}
+              top={insets.top + NAV_BAR}
               within={within || undefined}
+              onPickPlace={pickPlace}
               onOpenTrail={open}
-              onClose={closeSearch}
-              onClosed={endSearch}
             />
           ) : null}
         </View>
@@ -195,10 +167,9 @@ export default function Trails() {
             style={StyleSheet.absoluteFill}
             pins={pins.filter((t) => t.start_coord).map((t) => ({ id: t.id, coord: t.start_coord!, title: t.name, selected: t.id === selected }))}
             onPinPress={setSelected}
-            padding={{ top: 190, right: 24, bottom: 170, left: 24 }}
+            padding={{ top: 150, right: 24, bottom: 170, left: 24 }}
           />
-          <View style={[styles.mapTop, { top: insets.top + 56 }]} pointerEvents="box-none">
-            <SearchField value={query} onChangeText={setQuery} placeholder="Search by name or place" />
+          <View style={[styles.mapTop, { top: insets.top + NAV_BAR + 6 }]} pointerEvents="box-none">
             {filters}
           </View>
           {picked ? (
@@ -218,8 +189,7 @@ const styles = StyleSheet.create({
   flex: { flex: 1 },
   list: { paddingHorizontal: 16, paddingBottom: 40 },
   filters: { gap: 12, paddingBottom: 14, paddingTop: 4 },
-  hidden: { opacity: 0 },
-  mapTop: { position: 'absolute', left: 16, right: 16, gap: 10 },
+  mapTop: { position: 'absolute', left: 16, right: 16 },
   bleed: { marginHorizontal: -16 },
   chips: { paddingHorizontal: 16, gap: 8, alignItems: 'center' },
   chip: { paddingHorizontal: 13, paddingVertical: 8 },

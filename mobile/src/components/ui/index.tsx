@@ -3,11 +3,9 @@ import { GlassView, isLiquidGlassAvailable } from 'expo-glass-effect';
 import { SymbolView, type SFSymbol, type SymbolType, type SymbolWeight } from 'expo-symbols';
 import { Children, Fragment, type ReactNode } from 'react';
 import {
-  PlatformColor,
   Pressable,
   StyleSheet,
   Text,
-  TextInput,
   View,
   type ColorValue,
   type PressableProps,
@@ -93,62 +91,6 @@ export function GlassButton({
         <Icon name={icon} size={Math.round(size * 0.42)} weight="medium" color="text" />
       </Glass>
     </Pressable>
-  );
-}
-
-/**
- * Search as a Liquid Glass capsule, like the composer: one look whether it's idle, focused or scrolled.
- * Its text and icons use the system label colours, as a native search bar does: the glass turns light or dark with
- * what scrolls under it, and they follow it, so a query stays readable over a photo or another row's text.
- * With `onPress` it is a button that opens a search elsewhere, looking the same.
- */
-export function SearchField({
-  value,
-  onChangeText,
-  placeholder,
-  style,
-  autoFocus,
-  onPress,
-}: {
-  value: string;
-  onChangeText: (text: string) => void;
-  placeholder: string;
-  style?: StyleProp<ViewStyle>;
-  autoFocus?: boolean;
-  onPress?: () => void;
-}) {
-  const { dark } = useTheme();
-  const field = (
-    <Glass interactive style={[styles.search, style]}>
-      <Icon name="magnifyingglass" size={16} weight="medium" color={PlatformColor('secondaryLabel')} />
-      <TextInput
-        editable={!onPress}
-        pointerEvents={onPress ? 'none' : 'auto'}
-        autoFocus={autoFocus}
-        value={value}
-        onChangeText={onChangeText}
-        placeholder={placeholder}
-        placeholderTextColor={PlatformColor('placeholderText')}
-        style={[styles.searchInput, { color: PlatformColor('label') }]}
-        returnKeyType="search"
-        autoCorrect={false}
-        autoCapitalize="none"
-        keyboardAppearance={dark ? 'dark' : 'light'}
-        accessibilityLabel={placeholder}
-      />
-      {value ? (
-        <Pressable onPress={() => onChangeText('')} hitSlop={10} accessibilityRole="button" accessibilityLabel="Clear search">
-          <Icon name="xmark.circle.fill" size={17} color={PlatformColor('tertiaryLabel')} />
-        </Pressable>
-      ) : null}
-    </Glass>
-  );
-  return onPress ? (
-    <Pressable onPress={onPress} accessibilityRole="search" accessibilityLabel={placeholder}>
-      {field}
-    </Pressable>
-  ) : (
-    field
   );
 }
 
@@ -390,8 +332,6 @@ export const hairline = StyleSheet.hairlineWidth;
 const styles = StyleSheet.create({
   flex: { flex: 1 },
   glassButton: { alignItems: 'center', justifyContent: 'center' },
-  search: { flexDirection: 'row', alignItems: 'center', gap: 8, height: 46, borderRadius: 23, paddingHorizontal: 15 },
-  searchInput: { flex: 1, fontSize: 17, paddingVertical: 0, height: 46 },
   center: { textAlign: 'center' },
   pressed: { opacity: 0.55 },
   card: { borderRadius: radius.card, borderCurve: 'continuous', overflow: 'hidden' },

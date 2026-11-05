@@ -16,7 +16,7 @@ backend/app/schemas.py  Wire contract (TripPlan, Refusal, QuestionCard); mirrore
 backend/eval/         cases.yaml (43 graded cases), run.py (runner + summary), baseline.py (no tools), driver.py (headless harness + persona), fixtures.py (frozen feeds), chat.py (terminal chat), trace.py
 backend/app/rest.py   REST for the app: GET /trails, /trails/{id}, /conditions and /closures (both under the session's scenario); main.py serves data/photos at /photos
 mobile/src/app/       Expo Router: (tabs)/ native tabs (index = Plan home, trails/ = browse) + root pushes: chat, plan/[id], trail/[id], map, settings (modal)
-mobile/src/components/ ui/ (T, Icon, ListSection/ListRow, Chip, Button, StatRow, Glass, GlassButton, SearchField; logo.tsx = the mark), chat/ (activity row, question form, result cards, composer), trail/ (photo/route art, hero, elevation chart, map), plan/ (safety checks, timeline, sources)
+mobile/src/components/ ui/ (T, Icon, ListSection/ListRow, Chip, Button, StatRow, Glass, GlassButton; logo.tsx = the mark), chat/ (activity row, question form, result cards, composer), trail/ (photo/route art, hero, elevation chart, map), plan/ (safety checks, timeline, sources)
 mobile/src/constants/theme.ts  "Night trail" tokens (dark default, light "Day"), type scale, TOOL_META (label + SF Symbol + progress copy)
 mobile/src/lib/       agent.tsx (WebSocket + reducer), recent.tsx (plans kept on device), trails.tsx (REST cache + conditions), settings.tsx (incl. appearance), warnings.ts (HKO warning → symbol + advice), voice.ts, types.ts
 mobile/assets/        app.icon/ (Icon Composer bundle: iOS 26+ glass icon), images/icon.svg (source of the mark; icon.png and splash-icon.png are rendered from it)
@@ -85,8 +85,8 @@ Before calling a task done, run the relevant checks: `uv run pytest` for backend
 
 - **SF Symbols only** (`Icon` in `components/ui`); no emoji or Unicode glyphs as icons. Colour only through `useTheme()` tokens; no hex in screens.
 - **Accent (lime) means go / primary action / primary route.** Caution and danger are for safety states; tab bar and headers stay monochrome. Use `accent` for fills (with `onAccent` text) and route lines (cased in `routeCase`), and `accentInk` for accent-coloured text, icons and thin lines. They're the same lime at night; by day `accentInk` is forest green, because lime text on white is unreadable.
-- **Liquid Glass (`Glass`) is for controls and navigation** (composer, action bars, map buttons, `GlassButton`, `SearchField`), never for content cards.
-- **Search uses `SearchField`, not `headerSearchBarOptions`**: the native header search is only glass once focused or scrolled, and the `integrated` placement squeezes it beside the toolbar buttons.
+- **Liquid Glass (`Glass`) is for controls and navigation** (composer, action bars, map buttons, `GlassButton`), never for content cards.
+- **Search is the system's** (`Stack.SearchBar`, `placement="integratedButton"`, `allowToolbarIntegration={false}`): a glass button in the header that morphs into the field and its glass X. Don't rebuild it with custom glass and Reanimated: the morph can't be matched.
 - **The mark** (two peaks, trail cut into the saddle) is one path shared by `components/ui/logo.tsx`, `assets/images/icon.svg` and `assets/app.icon`. Don't put it on a tinted tile.
 - **The map is a mode**: `/map` or a still preview, never the background of a screen.
 
@@ -105,8 +105,9 @@ Before calling a task done, run the relevant checks: `uv run pytest` for backend
 - **iOS 27 SDK requires the UIScene life cycle.** Expo 57's template doesn't adopt it, so `mobile/plugins/withSceneLifecycle.js` patches the generated AppDelegate + Info.plist to use Expo's `ExpoAppSceneDelegate` (mirrors the SDK 58 template). Remove the plugin when upgrading to SDK 58.
 - **Xcode 27 has no Simulator.app**: simulators are shown in Device Hub (`open -b com.apple.dt.Devices`). `scripts/dev.sh` boots the device with `simctl`, then opens Device Hub.
 - **Chat scrolling and keyboard (`app/chat.tsx`):** the composer is padded by the keyboard's height directly. `KeyboardAvoidingView` under a native header needs the header height, which is still a default while a push runs. The list is a `ScrollView`: `FlatList.scrollToEnd` estimates from measured cells, so a plan card that has just arrived stays below the fold.
-- **Liquid Glass and animation:** a `GlassView` renders nothing inside a view with a Reanimated `entering` animation or a fading opacity. Move glass with `useAnimatedStyle` transforms and fade only its siblings (see `components/trail/trail-search.tsx`).
-- **Trails search is a mode** (`TrailSearch`): its own results over the list, so the list never jumps and Cancel returns it as it was. Scroll events report the header's inset as 0, so positions under the header come from the safe area plus the 54 pt compact bar.
+- **Liquid Glass and animation:** a `GlassView` renders nothing inside a view with a Reanimated `entering` animation or a fading opacity. Move glass with `useAnimatedStyle` transforms and fade only its siblings.
+- **Trails search is a mode** (`TrailResults` in `components/trail/trail-search.tsx`): its own results over the list, which the query never filters, so the list keeps its place and closing returns it as it was. Scroll events report the header's inset as 0, so positions under the header come from the safe area plus the 54 pt compact bar.
+- **Native search X (`patches/react-native-screens+*.patch`):** iOS 26's glass X dismisses the search controller without `searchBarCancelButtonClicked` or `textDidChange`, so react-native-screens 4.26 sent JS nothing. The patch makes the controller's dismissal emit `onCancelButtonPress` plus an empty `onChangeText`. `onClose`/`onOpen` are Android-only. `postinstall` applies it (`patch-package`); re-check it when upgrading react-native-screens, and rebuild after changing it.
 - **Metro red box:** after a syntax error the app once came back with light tokens over dark native views; a relaunch fixed it. Seen once, in dev only, and not reproduced.
 - **Local HTTP clients here go through a SOCKS proxy.** Use `websockets.connect(..., proxy=None)` in scripts that call localhost.
 - **Ollama:**

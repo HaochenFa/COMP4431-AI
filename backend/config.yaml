@@ -19,9 +19,10 @@ profiles:
     # effort: medium          # low | medium | high | xhigh | max (unset = API default "high")
     fallbacks: default        # server-side retry on another model if a request is declined; set null to disable
 
+  # Same model as or-sonnet, called directly (IDs from the Models API, 2026-11-05).
   claude-sonnet:
     provider: anthropic
-    model: claude-sonnet-5
+    model: claude-sonnet-5-5
     api_key_env: ANTHROPIC_API_KEY
     fallbacks: null
 
@@ -63,9 +64,16 @@ profiles:
     base_url: https://openrouter.ai/api/v1
     api_key_env: OPENROUTER_API_KEY
 
+  # IDs checked 2026-11-05. or-sonnet is the model the final eval and demo run on.
   or-sonnet:
     provider: openai_chat
-    model: anthropic/claude-sonnet-5
+    model: anthropic/claude-sonnet-5.5
+    base_url: https://openrouter.ai/api/v1
+    api_key_env: OPENROUTER_API_KEY
+
+  or-opus:
+    provider: openai_chat
+    model: anthropic/claude-opus-5.5
     base_url: https://openrouter.ai/api/v1
     api_key_env: OPENROUTER_API_KEY
 

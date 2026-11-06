@@ -186,7 +186,8 @@ export function ListRow({
       </View>
       {value != null ? (
         typeof value === 'string' || typeof value === 'number' ? (
-          <T v="body" color="text2">
+          // Capped so a long value (a model id) can't squeeze the title into one letter per line.
+          <T v="body" color="text2" numberOfLines={1} ellipsizeMode="head" style={styles.value}>
             {value}
           </T>
         ) : (
@@ -331,6 +332,7 @@ export const hairline = StyleSheet.hairlineWidth;
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
+  value: { maxWidth: '60%' },
   glassButton: { alignItems: 'center', justifyContent: 'center' },
   center: { textAlign: 'center' },
   pressed: { opacity: 0.55 },

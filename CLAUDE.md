@@ -21,6 +21,7 @@ mobile/src/components/ ui/ (T, Icon, ListSection/ListRow, Chip, Button, StatRow,
 mobile/src/constants/theme.ts  "Night trail" tokens (dark default, light "Day"), type scale, TOOL_META (label + SF Symbol + progress copy)
 mobile/src/lib/       agent.tsx (WebSocket + reducer), recent.tsx (plans kept on device), trails.tsx (REST cache + conditions), settings.tsx (incl. appearance, voice), warnings.ts (HKO warning → symbol + advice), voice.ts (speech in), speech.ts (read-aloud script + Kokoro playback, best iOS voice as fallback), types.ts
 mobile/assets/        app.icon/ (Icon Composer bundle: iOS 26+ glass icon), images/icon.svg (source of the mark; icon.png and splash-icon.png are rendered from it)
+presentation/         TrailAI.pptx + preview.jpg, built by build/build_deck.js (pptxgenjs); media/framed = screenshots and demo recordings; build/stats.json = eval figures (stats.py)
 data/                 Frozen dataset from scripts/ingest_afcd.py: trails.json, trails_raw.geojson, gpx/, snapshots/; knowledge.json from scripts/build_knowledge.py; photos/ (committed app assets) from scripts/fetch_photos.py
 ```
 
@@ -50,6 +51,10 @@ cd backend && uv run python -m eval.trace traces/<session>.jsonl
 cd mobile && LANG=en_US.UTF-8 npx expo run:ios   # development build; Expo Go is NOT enough (maps + speech recognition). CocoaPods needs the UTF-8 locale
 cd mobile && npx tsc --noEmit && npx expo lint
 cd mobile && npx expo-doctor
+
+# deck (edit build_deck.js, not the pptx: a rebuild overwrites hand edits)
+cd presentation/build && npm install && npm run build         # writes ../TrailAI.pptx
+cd presentation/build && python3 stats.py                     # refresh stats.json from backend/eval/results/
 ```
 
 Before calling a task done, run the relevant checks: `uv run pytest` for backend changes, and `tsc` + `expo lint` for mobile changes.

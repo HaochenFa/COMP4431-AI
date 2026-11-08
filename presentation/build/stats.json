@@ -1,0 +1,164 @@
+{
+ "sonnet": {
+  "n": 43,
+  "pass": 43,
+  "safe": 43,
+  "by_cat": {
+   "go": [
+    12,
+    12
+   ],
+   "closure": [
+    6,
+    6
+   ],
+   "weather": [
+    8,
+    8
+   ],
+   "ability": [
+    5,
+    5
+   ],
+   "scenery": [
+    3,
+    3
+   ],
+   "multi_turn": [
+    5,
+    5
+   ],
+   "out_of_scope": [
+    4,
+    4
+   ]
+  },
+  "median_steps": 6,
+  "median_seconds": 20.9,
+  "median_tokens": 55426,
+  "blocks_cases": 0,
+  "self_corrected": 0,
+  "invalid_args": 1,
+  "fails": []
+ },
+ "deepseek": {
+  "n": 43,
+  "pass": 38,
+  "safe": 43,
+  "by_cat": {
+   "go": [
+    12,
+    12
+   ],
+   "closure": [
+    3,
+    6
+   ],
+   "weather": [
+    8,
+    8
+   ],
+   "ability": [
+    4,
+    5
+   ],
+   "scenery": [
+    3,
+    3
+   ],
+   "multi_turn": [
+    4,
+    5
+   ],
+   "out_of_scope": [
+    4,
+    4
+   ]
+  },
+  "median_steps": 8,
+  "median_seconds": 25.6,
+  "median_tokens": 65045,
+  "blocks_cases": 4,
+  "self_corrected": 4,
+  "invalid_args": 0,
+  "fails": [
+   [
+    "ability_chi_ma_wan",
+    [
+     "expected refuse ['EXCEEDS_ABILITY', 'INSUFFICIENT_TIME'], got plan"
+    ]
+   ],
+   [
+    "closed_fan_lau",
+    [
+     "expected refuse ['CLOSED'], got plan"
+    ]
+   ],
+   [
+    "closed_luk_wu",
+    [
+     "expected refuse ['CLOSED'], got plan"
+    ]
+   ],
+   [
+    "closed_scenario_hk8",
+    [
+     "expected refuse ['CLOSED'], got plan"
+    ]
+   ],
+   [
+    "ask_sea_view",
+    [
+     "date 2026-11-07 != today+1"
+    ]
+   ]
+  ]
+ },
+ "baseline": {
+  "n": 43,
+  "pass": 28,
+  "safe": 36,
+  "by_cat": {
+   "go": [
+    9,
+    12
+   ],
+   "closure": [
+    0,
+    6
+   ],
+   "weather": [
+    8,
+    8
+   ],
+   "ability": [
+    3,
+    5
+   ],
+   "scenery": [
+    2,
+    3
+   ],
+   "multi_turn": [
+    2,
+    5
+   ],
+   "out_of_scope": [
+    4,
+    4
+   ]
+  },
+  "figures_right": 26,
+  "figures_stated": 90,
+  "invented_trails": 3,
+  "unsafe": [
+   "closed_nam_chung",
+   "closed_lantau7",
+   "closed_luk_wu",
+   "closed_scenario_hk8",
+   "closed_scenario_mc2",
+   "ability_chi_ma_wan",
+   "ability_plover_cove"
+  ]
+ }
+}

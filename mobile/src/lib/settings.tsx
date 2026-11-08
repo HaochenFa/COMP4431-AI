@@ -9,7 +9,14 @@ const KEY = 'trailai.settings.v1';
 /** Night trail is the default look; Day (light) is for projectors; System follows iOS. */
 export type AppearanceSetting = 'dark' | 'light' | 'system';
 
-export type Settings = { backendUrl: string; speakReplies: boolean; sessionId: string; appearance: AppearanceSetting; scenario: string };
+export type Settings = {
+  backendUrl: string;
+  speakReplies: boolean;
+  voice: string; // an id from VOICES in lib/speech.ts: a Kokoro voice on the server, or 'device'
+  sessionId: string;
+  appearance: AppearanceSetting;
+  scenario: string;
+};
 
 type Ctx = { settings: Settings; update: (patch: Partial<Settings>) => void; ready: boolean };
 const SettingsContext = createContext<Ctx | null>(null);
@@ -25,6 +32,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   const [settings, setSettings] = useState<Settings>({
     backendUrl: DEFAULT_URL,
     speakReplies: true,
+    voice: 'af_heart',
     sessionId: newSessionId(),
     appearance: 'dark',
     scenario: 'live',

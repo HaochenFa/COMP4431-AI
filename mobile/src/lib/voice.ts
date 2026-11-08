@@ -1,11 +1,9 @@
 import * as Haptics from 'expo-haptics';
-import * as Speech from 'expo-speech';
 import { ExpoSpeechRecognitionModule, useSpeechRecognitionEvent } from 'expo-speech-recognition';
 import { useRef, useState } from 'react';
 import { Alert, Linking } from 'react-native';
 
-// Same accent as the spoken replies (expo-speech en-GB), which suits Hong Kong English.
-export const SPEECH_LANG = 'en-GB';
+import { SPEECH_LANG, stopSpeaking } from './speech';
 
 /**
  * Tap to talk: `start()` listens and streams the interim transcript; `finish()` stops and sends it via
@@ -40,7 +38,7 @@ export function useVoice({ onFinal }: { onFinal: (text: string) => void }) {
   });
 
   const start = async () => {
-    Speech.stop(); // or the app talks over the user and hears itself
+    stopSpeaking(); // or the app talks over the user and hears itself
     const perm = await ExpoSpeechRecognitionModule.requestPermissionsAsync();
     if (!perm.granted) {
       Alert.alert('Voice is off', 'Allow the microphone and speech recognition for TrailAI in Settings, or type instead.', [

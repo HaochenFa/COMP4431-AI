@@ -5,10 +5,12 @@ import { StyleSheet, View } from 'react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { Chip, Glass, Icon, ListRow, ListSection, Press, SectionTitle, T } from '@/components/ui';
+import { Button, Chip, Glass, Icon, ListRow, ListSection, Press, SectionTitle, T } from '@/components/ui';
 import { shortDate, useTheme } from '@/constants/theme';
 import { trailTitle } from '@/lib/format';
 import { scenarioLabel } from '@/lib/scenarios';
+import { useSettings } from '@/lib/settings';
+import { speakOutcome, stopSpeaking, useSpeechState } from '@/lib/speech';
 import { useTrails } from '@/lib/trails';
 import type { Citation, ToolStep, TripPlan } from '@/lib/types';
 import { warningName } from '@/lib/warnings';
@@ -179,6 +181,20 @@ export function Refine({ options, onPick }: { options: { label: string; icon: SF
         ))}
       </View>
     </View>
+  );
+}
+
+/** Reads the plan aloud; while it's reading (or the server is preparing the audio), tapping stops it. */
+export function ReadAloudButton({ plan }: { plan: TripPlan }) {
+  const { settings } = useSettings();
+  const reading = useSpeechState();
+  return (
+    <Button
+      icon={reading === 'idle' ? 'speaker.wave.2.fill' : 'stop.fill'}
+      variant="secondary"
+      onPress={() => (reading === 'idle' ? speakOutcome({ kind: 'plan', plan }, settings.voice, settings.backendUrl) : stopSpeaking())}
+      accessibilityLabel={reading === 'idle' ? 'Read the plan aloud' : 'Stop reading'}
+    />
   );
 }
 

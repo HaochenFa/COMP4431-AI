@@ -1,16 +1,18 @@
-"""REST helpers for the app's browse screens: the trail list and detail, and the home screen's conditions.
+"""REST helpers for the app's browse screens: the trail list and detail, the home screen's conditions, and read-aloud (/tts).
 
 AFCD photos (scripts/fetch_photos.py) are served as static files from /photos by main.py.
 """
 
 from __future__ import annotations
 
+import asyncio
 import re
 from datetime import date, timedelta
 from typing import Any
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Query, Request, Response
 
+from . import tts
 from .agent.session import Session, SessionStore
 from .paths import DATA
 from .tools import data
@@ -19,6 +21,19 @@ from .tools.base import ToolBox, ToolContext
 PHOTOS = DATA / "photos"
 # HKO writes both "The maximum temperature will be around 33 degrees" and "a maximum temperature of around 28 degrees".
 _TODAY_MAX = re.compile(r"maximum temperature (?:will be |of )?(?:about |around )?(\d+) degrees", re.I)
+_RANGE = re.compile(r"bytes=(\d*)-(\d*)")
+
+
+def _byte_range(header: str | None, size: int) -> tuple[int, int] | None:
+    """The one byte range a client asked for, as (first, last) inclusive; None for the whole body."""
+    m = _RANGE.fullmatch((header or "").strip())
+    if not m or not (m[1] or m[2]):
+        return None
+    first = int(m[1]) if m[1] else max(size - int(m[2]), 0)
+    last = min(int(m[2]), size - 1) if m[1] and m[2] else size - 1
+    if first >= size or first > last:
+        raise HTTPException(416, "range not satisfiable", headers={"Content-Range": f"bytes */{size}"})
+    return first, last
 
 
 def _start(tid: str) -> list[float] | None:
@@ -118,5 +133,39 @@ def build_router(sessions: SessionStore, toolbox: ToolBox) -> APIRouter:
                 day["error"] = type(e).__name__
             days.append(day)
         return {"scenario": scratch.scenario, "warnings": warnings, "days": days}
+
+    return router
+
+
+def build_tts_router(speaker: tts.Speaker) -> APIRouter:
+    """Read-aloud for the app. A GET, so the app's audio player can stream the WAV straight from the URL."""
+    router = APIRouter()
+
+    @router.get("/tts/voices")
+    async def tts_voices() -> dict[str, Any]:
+        return {"status": speaker.status, "voices": speaker.voices(), "default": tts.DEFAULT_VOICE}
+
+    @router.api_route("/tts", methods=["GET", "HEAD"])
+    async def speak(request: Request, text: str = Query(min_length=1, max_length=tts.MAX_CHARS), voice: str = tts.DEFAULT_VOICE,
+                    speed: float = Query(1.0, ge=0.5, le=2.0)) -> Response:
+        """The app's player (expo-audio, i.e. AVPlayer) streams the clip itself: it probes with HEAD and
+        `Range: bytes=0-1`, and gives up on a server that answers a range request with 200 (AVError -11850,
+        "server incorrectly configured"), so byte ranges are honoured here."""
+        try:
+            clip = await asyncio.to_thread(speaker.wav, text, voice, speed)
+        except tts.NotReady as e:
+            raise HTTPException(503, f"voice model {e}") from None
+        except ValueError as e:
+            raise HTTPException(422, str(e)) from None
+        headers = {"Accept-Ranges": "bytes", "Cache-Control": "max-age=3600"}
+        status, body = 200, clip
+        if rng := _byte_range(request.headers.get("range"), len(clip)):
+            first, last = rng
+            status, body = 206, clip[first:last + 1]
+            headers["Content-Range"] = f"bytes {first}-{last}/{len(clip)}"
+        if request.method == "HEAD":
+            headers["Content-Length"] = str(len(body))
+            body = b""
+        return Response(body, status, media_type="audio/wav", headers=headers)
 
     return router

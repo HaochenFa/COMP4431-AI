@@ -15,14 +15,17 @@ load_dotenv()
 from .agent.harness import Agent  # noqa: E402  (after load_dotenv so keys are visible)
 from .agent.session import SessionStore  # noqa: E402
 from .llm.registry import build_provider  # noqa: E402
-from .rest import PHOTOS, build_router  # noqa: E402
+from .rest import PHOTOS, build_router, build_tts_router  # noqa: E402
 from .tools import data  # noqa: E402
+from .tts import speaker  # noqa: E402
 
 app = FastAPI(title="TrailAI - HK hiking agent")
 sessions = SessionStore()
 provider = build_provider()
 agent = Agent(provider)
 app.include_router(build_router(sessions, agent.toolbox))
+app.include_router(build_tts_router(speaker))
+speaker.warm()  # loads the voice model in the background (downloads it first if data/tts/ is empty)
 # check_dir=False: photos are optional (scripts/fetch_photos.py); the app falls back to route art.
 app.mount("/photos", StaticFiles(directory=PHOTOS, check_dir=False), name="photos")
 

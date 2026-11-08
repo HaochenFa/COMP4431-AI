@@ -9,6 +9,7 @@ import { radius, useTheme } from '@/constants/theme';
 import { useAgent } from '@/lib/agent';
 import { SCENARIOS } from '@/lib/scenarios';
 import { useSettings, type AppearanceSetting } from '@/lib/settings';
+import { VOICES, speak, useServerVoiceStatus } from '@/lib/speech';
 
 const APPEARANCE: { id: AppearanceSetting; label: string }[] = [
   { id: 'dark', label: 'Night' },
@@ -21,6 +22,7 @@ export default function SettingsScreen() {
   const { settings, update } = useSettings();
   const agent = useAgent();
   const [url, setUrl] = useState(settings.backendUrl);
+  const serverVoice = useServerVoiceStatus(settings.backendUrl);
 
   return (
     <>
@@ -54,6 +56,29 @@ export default function SettingsScreen() {
             title="Read plans aloud"
             accessory={<Switch value={settings.speakReplies} onValueChange={(v) => update({ speakReplies: v })} trackColor={{ true: c.accentInk }} />}
           />
+        </ListSection>
+
+        <ListSection
+          title="Reading voice"
+          footer={
+            serverVoice === 'ready'
+              ? 'Natural voices (Kokoro) run on the TrailAI server, so they work offline. Tap one to hear it.'
+              : serverVoice === 'loading'
+                ? "The server is still loading its voices. Until then, plans are read with the iPhone's voice."
+                : "Can't reach the server's voices, so plans are read with the iPhone's voice."
+          }>
+          {VOICES.map((v) => (
+            <ListRow
+              key={v.id}
+              title={v.label}
+              value={v.detail}
+              accessory={settings.voice === v.id ? 'check' : undefined}
+              onPress={() => {
+                update({ voice: v.id });
+                speak(`Hi, I'm ${v.label === 'iPhone voice' ? 'the iPhone voice' : v.label}. Dragon's Back takes about three hours, and you'll finish well before sunset.`, v.id, settings.backendUrl);
+              }}
+            />
+          ))}
         </ListSection>
 
         <ListSection title="Demo scenario" footer="Overrides the HKO warnings or AFCD closures on the server, so a no-go can be shown on cue. Results are labelled as demo overrides.">

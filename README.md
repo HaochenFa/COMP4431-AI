@@ -2,12 +2,13 @@
 
 COMP4431 group project (2026/27): a domain-specific chatbot for planning Hong Kong hikes.
 
-| Student ID | Name |
-|---|---|
-| _TODO_ | _TODO_ |
-| _TODO_ | _TODO_ |
+| Student ID | Name                  |
+| ---------- | --------------------- |
+| 24113347D  | FA Haochen            |
+| _TODO_     | Thierry Orlando GARTH |
 
 TrailAI is a pre-trip feasibility agent. You describe a hike loosely ("Saturday, half day, sea view, it rained last night"). It asks what's missing, checks official AFCD trail data, live HKO weather, sunset times and AFCD closures, and then returns one of two things:
+
 - a day plan, drawn on a map, with every trail, weather and sunset figure cited, or
 - a no-go card that gives the evidence and an alternative.
 
@@ -16,9 +17,11 @@ There is no transport data yet, so travel to and from a trail is shown as an app
 ## Features
 
 **Basic**
+
 - English chat about Hong Kong hiking, using the official data below.
 
 **Additional**
+
 - **Provider-agnostic agent harness.** One loop runs on the Anthropic Messages API, OpenAI Chat Completions (and any OpenAI-compatible server: xAI Grok, DeepSeek, OpenRouter, Ollama), or the OpenAI Responses API (OpenAI or xAI). You switch with `LLM_PROFILE` in `backend/config.yaml`.
 - **Safety gate.** `present_plan` and `refuse` are blocked until the agent has actually checked closures and weather (and sunset, for plans) for those trails on that date. A plan is also blocked when any of its figures (km, hours, sunset) differ from what the tools returned, or when it names a transport route no tool returned. Plans beyond the HKO 9-day forecast are marked Provisional, not Go.
 - **Question cards.** When information is missing, the agent pauses and shows single-choice, multiple-choice or free-text cards. It resumes when you answer.
@@ -28,9 +31,9 @@ There is no transport data yet, so travel to and from a trail is shown as an app
 - **Runs on local models.** The same harness drives Ollama (qwen3), with a dedicated server script and robustness fixes for small models (empty-turn retry, strict trail ids).
 - **Skills.** Step-by-step procedures (intake, search, recommend, plan, maps, safety) that the agent loads only when needed.
 - **Official live data.**
-  - AFCD *Hiking Trails in Country Parks*: 152 sections, geometry and GPX tracks.
+  - AFCD _Hiking Trails in Country Parks_: 152 sections, geometry and GPX tracks.
   - Official walking times and star ratings from hiking.gov.hk. The 25 trails with no official time get one computed from their official length and climb, labelled as an estimate.
-  - AFCD *Closed Trails in Country Parks*.
+  - AFCD _Closed Trails in Country Parks_.
   - HKO 9-day forecast, current warnings, and sunrise/sunset times.
   - Every live feed has a disk-snapshot fallback so the app still works offline.
 - **iOS app (Expo / React Native), "Night trail" design.**
@@ -106,7 +109,16 @@ The official AFCD trail photos (~50 MB, credited in the app) are committed in `d
 uv --project backend run python scripts/fetch_photos.py
 ```
 
+Plans are read aloud by Kokoro-82M (an open neural voice) running in the backend, so it works offline. The model (~353 MB, gitignored) goes in `data/tts/`, and the backend downloads it on first start if it's missing. To fetch it ahead of time and check it works:
+
+```bash
+cd backend && uv run python -m app.tts
+```
+
+Until it's loaded, the app reads plans with the best installed iOS voice.
+
 In the app, open Settings (gear on the Plan tab) and set the backend URL:
+
 - Simulator: `http://localhost:8000`
 - iPhone on the same Wi-Fi or hotspot: `http://<laptop IP>:8000`
 
@@ -115,7 +127,7 @@ In the app, open Settings (gear on the Plan tab) and set the backend URL:
 ```
 backend/   FastAPI app: app/llm (3 provider adapters + embeddings), app/agent (harness, session, prompts), app/tools, app/skills; eval/
 mobile/    Expo app: src/app (tabs, chat, plan, trail, map, settings), src/components (ui, chat, trail, plan), src/lib (protocol, state, REST)
-data/      trails.json, trails_raw.geojson, gpx/, snapshots/ (from scripts/ingest_afcd.py); knowledge.json (scripts/build_knowledge.py); photos/ (scripts/fetch_photos.py)
+data/      trails.json, trails_raw.geojson, gpx/, snapshots/ (from scripts/ingest_afcd.py); knowledge.json (scripts/build_knowledge.py); photos/ (scripts/fetch_photos.py); tts/ (voice model, python -m app.tts)
 docs/      project spec
 ```
 

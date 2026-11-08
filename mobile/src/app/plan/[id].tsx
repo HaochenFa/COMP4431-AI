@@ -2,7 +2,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { Linking, StyleSheet, View } from 'react-native';
 import Animated, { useAnimatedScrollHandler, useSharedValue } from 'react-native-reanimated';
 
-import { ActionBar, Badges, DemoChip, PlanChip, Refine, SafetyChecks, Sources, Timeline } from '@/components/plan/sections';
+import { ActionBar, Badges, DemoChip, PlanChip, ReadAloudButton, Refine, SafetyChecks, Sources, Timeline } from '@/components/plan/sections';
 import { ElevationChart } from '@/components/trail/elevation-chart';
 import { TrailHero } from '@/components/trail/trail-hero';
 import { TrailImage } from '@/components/trail/trail-image';
@@ -12,7 +12,6 @@ import { REFUSAL_LABEL, difficultyTone, radius, shortDate, useTheme } from '@/co
 import { checksBefore, useAgent } from '@/lib/agent';
 import { fmtHours, fmtKm, fmtM, trailRoute, trailTitle } from '@/lib/format';
 import { useRecent } from '@/lib/recent';
-import { speakOutcome } from '@/lib/speech';
 import { useTrailDetail, useTrails } from '@/lib/trails';
 import type { Outcome, Refusal, TripPlan } from '@/lib/types';
 
@@ -174,7 +173,7 @@ function GoPage({ id, plan, checks }: { id: string; plan: TripPlan; checks: Outc
       </Animated.ScrollView>
       <ActionBar>
         <Button title="Directions" icon="tram.fill" onPress={directions} style={styles.flex} />
-        <Button icon="speaker.wave.2.fill" variant="secondary" onPress={() => speakOutcome({ kind: 'plan', plan })} accessibilityLabel="Read the plan aloud" />
+        <ReadAloudButton plan={plan} />
       </ActionBar>
     </View>
   );

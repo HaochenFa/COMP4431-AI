@@ -14,11 +14,12 @@ backend/app/tools/    hiking.py (trail/knowledge/closure/weather/daylight/map to
 backend/app/skills/   Markdown SOPs loaded via load_skill; hike-safety.md is always injected into the system prompt
 backend/app/schemas.py  Wire contract (TripPlan, Refusal, QuestionCard); mirrored by mobile/src/lib/types.ts
 backend/eval/         cases.yaml (43 graded cases), run.py (runner + summary), baseline.py (no tools), driver.py (headless harness + persona), fixtures.py (frozen feeds), chat.py (terminal chat), trace.py
-backend/app/rest.py   REST for the app: GET /trails, /trails/{id}, /conditions and /closures (both under the session's scenario); main.py serves data/photos at /photos
+backend/app/rest.py   REST for the app: GET /trails, /trails/{id}, /conditions and /closures (both under the session's scenario), /tts + /tts/voices; main.py serves data/photos at /photos
+backend/app/tts.py    Read-aloud: Kokoro-82M (kokoro-onnx) from data/tts/ (gitignored, ~353 MB, downloaded on first start), loaded in the background; /tts is 503 until ready
 mobile/src/app/       Expo Router: (tabs)/ native tabs (index = Plan home, trails/ = browse) + root pushes: chat, plan/[id], trail/[id], map, settings (modal)
 mobile/src/components/ ui/ (T, Icon, ListSection/ListRow, Chip, Button, StatRow, Glass, GlassButton; logo.tsx = the mark), chat/ (activity row, question form, result cards, composer), trail/ (photo/route art, hero, elevation chart, map), plan/ (safety checks, timeline, sources)
 mobile/src/constants/theme.ts  "Night trail" tokens (dark default, light "Day"), type scale, TOOL_META (label + SF Symbol + progress copy)
-mobile/src/lib/       agent.tsx (WebSocket + reducer), recent.tsx (plans kept on device), trails.tsx (REST cache + conditions), settings.tsx (incl. appearance), warnings.ts (HKO warning → symbol + advice), voice.ts, types.ts
+mobile/src/lib/       agent.tsx (WebSocket + reducer), recent.tsx (plans kept on device), trails.tsx (REST cache + conditions), settings.tsx (incl. appearance, voice), warnings.ts (HKO warning → symbol + advice), voice.ts (speech in), speech.ts (read-aloud script + Kokoro playback, best iOS voice as fallback), types.ts
 mobile/assets/        app.icon/ (Icon Composer bundle: iOS 26+ glass icon), images/icon.svg (source of the mark; icon.png and splash-icon.png are rendered from it)
 data/                 Frozen dataset from scripts/ingest_afcd.py: trails.json, trails_raw.geojson, gpx/, snapshots/; knowledge.json from scripts/build_knowledge.py; photos/ (committed app assets) from scripts/fetch_photos.py
 ```
@@ -35,6 +36,7 @@ LLM_PROFILE=or-sonnet uv run uvicorn app.main:app ...         # profiles live in
 uv --project backend run python scripts/ingest_afcd.py        # refresh data/ (~1 min, scrapes hiking.gov.hk politely)
 uv --project backend run python scripts/build_knowledge.py    # re-embed data/knowledge.json (needs the Ollama server, ~30 s)
 uv --project backend run python scripts/fetch_photos.py       # AFCD trail photos -> data/photos (committed, ~50 MB; app falls back to route art)
+cd backend && uv run python -m app.tts                        # read-aloud self-test (downloads the Kokoro model to data/tts/ if missing); --fetch to only download
 
 # local models (Ollama; profiles `ollama` = qwen3:8b, `ollama-14b`; embeddings = bge-m3)
 scripts/ollama_serve.sh                                       # port 11435, 32k context; leave the menu-bar app on 11434 alone
@@ -104,6 +106,9 @@ Before calling a task done, run the relevant checks: `uv run pytest` for backend
   - The Very Hot Weather Warning is reported but isn't an automatic no-go (hike-safety decides EXTREME_HEAT).
 - **iOS 27 SDK requires the UIScene life cycle.** Expo 57's template doesn't adopt it, so `mobile/plugins/withSceneLifecycle.js` patches the generated AppDelegate + Info.plist to use Expo's `ExpoAppSceneDelegate` (mirrors the SDK 58 template). Remove the plugin when upgrading to SDK 58.
 - **Xcode 27 has no Simulator.app**: simulators are shown in Device Hub (`open -b com.apple.dt.Devices`). `scripts/dev.sh` boots the device with `simctl`, then opens Device Hub.
+- **Precompiled Expo modules crash at launch on Xcode 27.2.** With SDK 57's default (prebuilt Debug XCFrameworks) the simulator dev build died at native startup in `facebook::react::Props::Props()` while ExpoModulesCore registered its views. `app.config.ts` sets `expo-build-properties` `ios.usePrecompiledModules: false`, so Expo modules compile from source (a few minutes more on a clean build). Keep it until a build with the default is seen to launch.
+- **After a native crash the simulator refuses to relaunch the app:** every launch dies in dyld with `Library not loaded: /usr/lib/libSystem.B.dylib … (no dyld cache)`, because RunningBoard starts the next instance with `ReslideSharedCache` (a post-crash mitigation) and dyld_sim can't honour it. It isn't a build problem: `xcrun simctl shutdown <udid> && xcrun simctl boot <udid>` clears it. Crash reports are in `~/Library/Logs/DiagnosticReports/TrailAI-*.ips`.
+- **`/tts` must honour byte ranges.** The app plays the WAV with `expo-audio` (AVPlayer), which probes with `Range: bytes=0-1` and gives up with AVError -11850 ("server incorrectly configured") on a server that answers 200, after which the app quietly falls back to the iOS voice. The route answers 206/416 and HEAD.
 - **Chat scrolling and keyboard (`app/chat.tsx`):** the composer is padded by the keyboard's height directly. `KeyboardAvoidingView` under a native header needs the header height, which is still a default while a push runs. The list is a `ScrollView`: `FlatList.scrollToEnd` estimates from measured cells, so a plan card that has just arrived stays below the fold.
 - **Liquid Glass and animation:** a `GlassView` renders nothing inside a view with a Reanimated `entering` animation or a fading opacity. Move glass with `useAnimatedStyle` transforms and fade only its siblings.
 - **Trails search is a mode** (`TrailResults` in `components/trail/trail-search.tsx`): its own results over the list, which the query never filters, so the list keeps its place and closing returns it as it was. Scroll events report the header's inset as 0, so positions under the header come from the safe area plus the 54 pt compact bar.

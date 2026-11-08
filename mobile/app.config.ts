@@ -39,6 +39,10 @@ const config: ExpoConfig = {
       },
     ],
     './plugins/withSceneLifecycle',
+    // Build Expo modules from source. With SDK 57's precompiled XCFrameworks the simulator dev build died at native
+    // startup in facebook::react::Props::Props() while ExpoModulesCore registered its views (a binary mismatch with
+    // the React core it links on Xcode 27.2). Costs a few minutes on a clean build; see the Gotchas in CLAUDE.md.
+    ['expo-build-properties', { ios: { usePrecompiledModules: false } }],
   ],
   extra: { hasGoogleMaps: googleMapsKey.length > 0 },
   experiments: { typedRoutes: true, reactCompiler: true },

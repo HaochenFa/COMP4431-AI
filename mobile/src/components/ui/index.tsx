@@ -27,7 +27,7 @@ export function T({
   center,
   style,
   ...rest
-}: TextProps & { v?: TypeVariant; color?: ColorName | string; weight?: TextStyle['fontWeight']; center?: boolean }) {
+}: TextProps & { v?: TypeVariant; color?: ColorName | string; weight?: TextStyle['fontWeight']; center?: boolean; lang?: string }) {
   const { c } = useTheme();
   return <Text {...rest} style={[type[v], { color: pick(c, color) }, weight && { fontWeight: weight }, center && styles.center, style]} />;
 }
@@ -158,6 +158,7 @@ export function ListRow({
   titleLines,
   subtitleLines,
   leading,
+  below,
 }: {
   icon?: SFSymbol;
   iconColor?: ColorName | string;
@@ -170,6 +171,8 @@ export function ListRow({
   titleLines?: number;
   subtitleLines?: number;
   leading?: ReactNode;
+  /** Views under the text (a row of chips): title and subtitle are text-only. */
+  below?: ReactNode;
 }) {
   const body = (
     <View style={styles.row}>
@@ -183,6 +186,7 @@ export function ListRow({
             {subtitle}
           </T>
         ) : null}
+        {below}
       </View>
       {value != null ? (
         typeof value === 'string' || typeof value === 'number' ? (

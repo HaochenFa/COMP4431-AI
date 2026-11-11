@@ -12,7 +12,7 @@ import { scenarioLabel } from '@/lib/scenarios';
 import { useSettings } from '@/lib/settings';
 import { speakOutcome, stopSpeaking, useSpeechState } from '@/lib/speech';
 import { useTrails } from '@/lib/trails';
-import type { Citation, ToolStep, TripPlan } from '@/lib/types';
+import type { BusStop, Citation, ToolStep, TrailAccess, TripPlan } from '@/lib/types';
 import { warningName } from '@/lib/warnings';
 
 const CHECK: Record<string, { label: string; icon: SFSymbol }> = {
@@ -127,6 +127,92 @@ export function Timeline({ steps }: { steps: TripPlan['timeline'] }) {
   );
 }
 
+const MAX_ROUTES = 8;
+const GMB = 'GMB ';
+
+/** Route numbers as chips. A busy stop has up to 70 routes: show the first few and count the rest. */
+function RouteChips({ routes }: { routes: string[] }) {
+  const { c } = useTheme();
+  const rest = routes.length - MAX_ROUTES;
+  return (
+    <View style={styles.routes}>
+      {routes.slice(0, MAX_ROUTES).map((r) => (
+        <View key={r} style={[styles.route, { backgroundColor: c.surface2 }]}>
+          <T v="footnote" weight="600" style={styles.routeText}>
+            {r}
+          </T>
+        </View>
+      ))}
+      {rest > 0 ? (
+        <T v="footnote" color="text2">
+          +{rest} more
+        </T>
+      ) : null}
+    </View>
+  );
+}
+
+/** The feed lists green minibuses with buses; a stop only they serve gets its own icon and label. */
+function stopKind(routes: string[]): { icon: SFSymbol; label: string; routes: string[] } {
+  const minibus = routes.filter((r) => r.startsWith(GMB));
+  if (minibus.length === routes.length) return { icon: 'bus', label: 'Green minibus', routes: routes.map((r) => r.slice(GMB.length)) };
+  return { icon: 'bus.doubledecker', label: minibus.length ? 'Bus and minibus' : 'Bus', routes };
+}
+
+/** Stops are listed up to 5 km out (backend MAX_M): metres up to 1 km, then km. */
+function stopDistance(m: number) {
+  return m < 1000 ? `${m} m` : `${(m / 1000).toFixed(1)} km`;
+}
+
+function StopRows({ stops }: { stops: BusStop[] }) {
+  if (!stops.length) return <ListRow icon="bus.doubledecker" iconColor="text3" title={<T color="text2">No bus stop within 5 km</T>} />;
+  return stops.map((s) => {
+    const kind = stopKind(s.routes);
+    return (
+      <ListRow
+        key={`${s.name}-${s.distance_m}`}
+        icon={kind.icon}
+        title={s.name}
+        titleLines={2}
+        subtitle={`${stopDistance(s.distance_m)} away · ${kind.label}`}
+        below={<RouteChips routes={kind.routes} />}
+      />
+    );
+  });
+}
+
+/** "Getting there & back": the nearest bus stops to the trail's start and finish. Official data shown as is; the agent never names routes. */
+export function AccessSection({ access }: { access?: TrailAccess | null }) {
+  // No data, or no stop within range of either end: two "no bus stop" rows say nothing useful.
+  if (!access || (!access.start.length && !access.finish.length)) return null;
+  return (
+    <View>
+      <SectionTitle>Getting there & back</SectionTitle>
+      <View style={styles.groups}>
+        <View>
+          <T v="footnote" color="text2" weight="600" style={styles.groupLabel}>
+            Start
+          </T>
+          <ListSection inset={52}>
+            <StopRows stops={access.start} />
+          </ListSection>
+        </View>
+        <View>
+          <T v="footnote" color="text2" weight="600" style={styles.groupLabel}>
+            Finish
+          </T>
+          <ListSection
+            inset={52}
+            footer="Straight-line distances from the trail's start and finish. Source: Transport Department. Check routes and times with the operator before you go."
+          >
+            <StopRows stops={access.finish} />
+          </ListSection>
+        </View>
+      </View>
+    </View>
+  );
+}
+
 /** "How this plan was made": collapsed by default, numbered official sources that open in-app. */
 export function Sources({ items, title = 'How this plan was made' }: { items: Citation[]; title?: string }) {
   const [open, setOpen] = useState(false);
@@ -210,6 +296,11 @@ export function ActionBar({ children }: { children: ReactNode }) {
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
+  groups: { gap: 14 },
+  groupLabel: { marginBottom: 6, marginLeft: 4 },
+  routes: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 6, marginTop: 8 },
+  route: { paddingHorizontal: 8, paddingVertical: 2, borderRadius: 7 },
+  routeText: { fontVariant: ['tabular-nums'] },
   badges: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
   step: { flexDirection: 'row', gap: 12, minHeight: 44 },
   time: { width: 96, fontVariant: ['tabular-nums'], paddingTop: 1 },

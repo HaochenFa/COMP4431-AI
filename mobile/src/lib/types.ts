@@ -146,6 +146,11 @@ export type TrailClosure = {
   diversion?: { status?: string; effective?: string; expected_expiry?: string; note?: string };
 };
 
+/** A bus stop near a trail end (display-only official data: data/transport.json, from the Transport Department GTFS feed). */
+export type BusStop = { name: string; name_zh: string; distance_m: number; routes: string[] };
+
+export type TrailAccess = { start: BusStop[]; finish: BusStop[]; source?: string | null; downloaded?: string | null };
+
 export type TrailDetail = {
   id: string;
   name: string;
@@ -166,6 +171,8 @@ export type TrailDetail = {
   profile: ElevationProfile | null;
   photo: boolean;
   landmarks: string[];
+  /** null when the trail has no GPX, so no start/finish to measure from. */
+  access: TrailAccess | null;
 };
 
 export type ConditionsDay = {

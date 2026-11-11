@@ -14,7 +14,8 @@ backend/app/tools/    hiking.py (trail/knowledge/closure/weather/daylight/map to
 backend/app/skills/   Markdown SOPs loaded via load_skill; hike-safety.md is always injected into the system prompt
 backend/app/schemas.py  Wire contract (TripPlan, Refusal, QuestionCard); mirrored by mobile/src/lib/types.ts
 backend/eval/         cases.yaml (43 graded cases), run.py (runner + summary), baseline.py (no tools), driver.py (headless harness + persona), fixtures.py (frozen feeds), chat.py (terminal chat), trace.py
-backend/app/rest.py   REST for the app: GET /trails, /trails/{id}, /conditions and /closures (both under the session's scenario), /tts + /tts/voices; main.py serves data/photos at /photos
+backend/app/transport.py  nearest_stops() for scripts/build_transport.py (display-only bus stops near each trail end; never an agent tool, not in the gate)
+backend/app/rest.py   REST for the app: GET /trails, /trails/{id} (incl. `access`: bus stops from data/transport.json, null without a GPX), /conditions and /closures (both under the session's scenario), /tts + /tts/voices; main.py serves data/photos at /photos
 backend/app/tts.py    Read-aloud: Kokoro-82M (kokoro-onnx) from data/tts/ (gitignored, ~353 MB, downloaded on first start), loaded in the background; /tts is 503 until ready
 mobile/src/app/       Expo Router: (tabs)/ native tabs (index = Plan home, trails/ = browse) + root pushes: chat, plan/[id], trail/[id], map, settings (modal)
 mobile/src/components/ ui/ (T, Icon, ListSection/ListRow, Chip, Button, StatRow, Glass, GlassButton; logo.tsx = the mark), chat/ (activity row, question form, result cards, composer), trail/ (photo/route art, hero, elevation chart, map), plan/ (safety checks, timeline, sources)
@@ -22,7 +23,7 @@ mobile/src/constants/theme.ts  "Night trail" tokens (dark default, light "Day"),
 mobile/src/lib/       agent.tsx (WebSocket + reducer), recent.tsx (plans kept on device), trails.tsx (REST cache + conditions), settings.tsx (incl. appearance, voice), warnings.ts (HKO warning → symbol + advice), voice.ts (speech in), speech.ts (read-aloud script + Kokoro playback, best iOS voice as fallback), types.ts
 mobile/assets/        app.icon/ (Icon Composer bundle: iOS 26+ glass icon), images/icon.svg (source of the mark; icon.png and splash-icon.png are rendered from it)
 presentation/         TrailAI.pptx + preview.jpg, built by build/build_deck.js (pptxgenjs); media/framed = screenshots and demo recordings; build/stats.json = eval figures (stats.py)
-data/                 Frozen dataset from scripts/ingest_afcd.py: trails.json, trails_raw.geojson, gpx/, snapshots/; knowledge.json from scripts/build_knowledge.py; photos/ (committed app assets) from scripts/fetch_photos.py
+data/                 Frozen dataset from scripts/ingest_afcd.py: trails.json, trails_raw.geojson, gpx/, snapshots/; transport.json from scripts/build_transport.py (raw GTFS in gitignored gtfs_raw/); knowledge.json from scripts/build_knowledge.py; photos/ (committed app assets) from scripts/fetch_photos.py
 ```
 
 ## Commands
@@ -134,9 +135,10 @@ Built so far:
 - Week 1: harness, 3 adapters, tools, gate, question cards, skills, data ingest, Expo app with map, cards and voice.
 - Week 2: `eval/` (43 cases, frozen feeds, no-tools baseline); the elevation profile (GPX → tools + plan-card chart); RAG `search_knowledge` (bge-m3 over description passages).
 - Week 3: UI redesign ("Night trail"): native tabs (Plan home + Trails browse), full-screen chat with one-line agent activity, plan pages (AFCD photo hero, stats, safety checks, scrubbable elevation, map as a mode), SF Symbols only, Liquid Glass chrome, dark default with a light mode for projectors.
+- "Getting there & back" on plan and trail pages: up to 3 nearest bus stops (≤ 5 km, straight line) to each trail's start/finish from the Transport Department GTFS feed (`scripts/build_transport.py` → `data/transport.json`; the 27 trails with no GPX have none). The feed's route_type 3 includes green minibuses, shown as `GMB 9A`. Agent, prompt, skills and gate untouched.
 - Tested end to end on xAI Grok (`grok` = grok-4.6, `grok-4.7`, `grok-responses`; `XAI_API_KEY`, now low on credit), on Grok via OpenRouter (`or-grok`, the default in `.env`; `OPENROUTER_API_KEY`) and on local Ollama qwen3. Full 43-case eval (2026-11-05): `or-sonnet` (Claude Sonnet 5.5) 43/43, the model used in the deck and demo videos; `or-deepseek` 38/43 with every plan safe; the no-tools Sonnet baseline 28/43. `or-gemini-flash` gets OpenRouter 403 ("provider Terms Of Service") from here, so it is untested; `or-opus` and `or-gpt` haven't been run. The direct Anthropic adapter works end to end: `claude-sonnet` (claude-sonnet-5-5, `ANTHROPIC_API_KEY`) passed a one-case smoke run on 2026-11-05 and is the profile the live demo uses. The GPT profiles are unit-tested only, until a key is added. The harness has to work for many models: prefer code-enforced rules and clear tool errors over prompt tweaks for one model.
 
 Not built yet:
-- `get_transport` (Google Directions, server-side), deferred.
+- `get_transport` (Google Directions, server-side), deferred. The nearest-bus-stops section ("Getting there & back") is display-only data, not this tool.
 - User study.
 - Anthropic prompt caching: the system prompt is already cache-stable, since the clock time moved into user messages.

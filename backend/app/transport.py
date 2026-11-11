@@ -1,0 +1,92 @@
+"""Nearest bus stops to a point. Used by scripts/build_transport.py and tested offline; display-only data, never agent input."""
+
+from __future__ import annotations
+
+import math
+import re
+from typing import Any
+
+MAX_M = 5000
+MAX_STOPS = 3
+
+
+def distance_m(a: tuple[float, float], b: tuple[float, float]) -> float:
+    """Straight-line (haversine) distance in metres between two (lat, lng) points."""
+    la1, lo1, la2, lo2 = map(math.radians, (a[0], a[1], b[0], b[1]))
+    h = math.sin((la2 - la1) / 2) ** 2 + math.cos(la1) * math.cos(la2) * math.sin((lo2 - lo1) / 2) ** 2
+    return 2 * 6371000.0 * math.asin(math.sqrt(h))
+
+
+def nearest_stops(point: tuple[float, float], stops: list[dict[str, Any]], limit: int = MAX_STOPS, max_m: float = MAX_M) -> list[dict[str, Any]]:
+    """Up to `limit` stops within `max_m` of `point`, nearest first.
+
+    Each stop needs lat, lng, name, name_zh and routes. Distances are rounded to 10 m; stops with no
+    route are skipped, and stops sharing a name are merged.
+    """
+    best: dict[str, tuple[float, dict[str, Any]]] = {}
+    routes: dict[str, set[str]] = {}
+    for s in stops:
+        if not s["routes"]:
+            continue
+        d = distance_m(point, (s["lat"], s["lng"]))
+        if d > max_m:
+            continue
+        # The two sides of a road share a name: list the nearer one once, with the routes of both.
+        routes.setdefault(s["name"], set()).update(s["routes"])
+        if s["name"] not in best or d < best[s["name"]][0]:
+            best[s["name"]] = (d, s)
+    hits = sorted(best.values(), key=lambda h: h[0])[:limit]
+    return [
+        {"name": s["name"], "name_zh": s["name_zh"], "distance_m": int(round(d / 10.0)) * 10, "routes": sorted(routes[s["name"]], key=_route_key)}
+        for d, s in hits
+    ]
+
+
+ACRONYMS = {
+    "MTR", "BBI", "PTI", "HK", "LR", "LRT", "II", "III", "IV", "HKU", "HKUST", "CUHK", "HKSAR", "YMCA", "YWCA",
+    "CLP", "GPO", "PLA", "APM", "IFC", "ICC", "HSBC", "KMB", "CTB", "GMB", "BBQ",
+}
+# Only English function words: "to", "on" and "in" are also syllables of place names (To Kwa Wan, Ma On Shan).
+SMALL_WORDS = {"of", "and", "the", "at", "near", "outside", "opposite"}
+
+
+def _cap(part: str) -> str:
+    """One run of letters: 'D'AGUILAR' -> 'D'Aguilar', 'TATE'S' -> 'Tate's'."""
+    head, sep, tail = part.partition("'")
+    head = head[:1].upper() + head[1:].lower()
+    if not sep:
+        return head
+    return head + sep + (_cap(tail) if len(tail) > 1 else tail.lower())
+
+
+def display_name(raw: str) -> str:
+    """The feed's ALL-CAPS stop name in title case: 'TO TEI WAN, SHEK O ROAD' -> 'To Tei Wan, Shek O Road'.
+
+    Acronyms and anything with a digit ('21A') stay as they are.
+    """
+    words = []
+    for i, word in enumerate(raw.split()):
+        bare = word.strip("(),.")
+        if bare in ACRONYMS or any(ch.isdigit() for ch in word):
+            words.append(word)
+        elif i > 0 and (bare.lower() in SMALL_WORDS or (bare == "TO" and words[-1] == "opposite")):
+            words.append(word.lower())
+        else:
+            words.append(re.sub(r"[A-Za-z']+", lambda m: _cap(m[0]), word))
+    return " ".join(words)
+
+
+def route_label(short_name: str, agency_id: str) -> str | None:
+    """The route number as shown ("9", "GMB 9A"), or None for a route with no number.
+
+    The feed's cross-boundary coaches carry a name ("Kwun Tong - Huanggang") where the number goes.
+    """
+    number = short_name.strip()
+    if not re.search(r"\d", number):
+        return None
+    return f"GMB {number}" if agency_id == "GMB" else number
+
+
+def _route_key(r: str):
+    m = re.match(r"([A-Za-z ]*?)(\d+)(.*)", r)
+    return (m[1], int(m[2]), m[3]) if m else (r, 0, "")

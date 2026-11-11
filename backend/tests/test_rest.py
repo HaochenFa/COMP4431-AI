@@ -200,3 +200,21 @@ def test_a_failed_model_download_is_reported_not_raised(tmp_path, monkeypatch):
     speaker = tts.Speaker(folder=tmp_path)
     speaker.load()
     assert speaker.kokoro is None and speaker.status == "failed: offline"
+
+
+def test_trail_detail_has_bus_access(client_and_sessions, monkeypatch):
+    client, _ = client_and_sessions
+    stop = {"name": "TO TEI WAN", "name_zh": "土地灣", "distance_m": 20, "routes": ["9"]}
+    monkeypatch.setattr(data, "transport", lambda: {"source": "TD", "downloaded": "2026-11-11", "trails": {"hk_8": {"start": [stop], "finish": []}}})
+    access = client.get("/trails/hk_8").json()["access"]
+    assert access["start"] == [stop]
+    assert access["finish"] == []
+    assert access["source"] == "TD"
+
+
+def test_trail_detail_access_is_null_when_missing(client_and_sessions, monkeypatch):
+    client, _ = client_and_sessions
+    monkeypatch.setattr(data, "transport", lambda: {})
+    assert client.get("/trails/hk_8").json()["access"] is None
+    monkeypatch.setattr(data, "transport", lambda: {"trails": {}})
+    assert client.get("/trails/hk_8").json()["access"] is None

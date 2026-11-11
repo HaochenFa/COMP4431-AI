@@ -143,6 +143,20 @@ def geometries() -> dict[str, list[list[list[float]]]]:
 
 
 @lru_cache
+def transport() -> dict[str, Any]:
+    """scripts/build_transport.py output: {source, downloaded, trails: {id: {start, finish}}}; empty when not built."""
+    path = DATA / "transport.json"
+    return json.loads(path.read_text()) if path.exists() else {}
+
+
+def access(tid: str) -> dict[str, Any] | None:
+    """Nearest bus stops to a trail's start and finish (display-only), or None when unknown."""
+    t = transport()
+    a = (t.get("trails") or {}).get(tid)
+    return {**a, "source": t.get("source"), "downloaded": t.get("downloaded")} if a else None
+
+
+@lru_cache
 def knowledge() -> list[dict[str, Any]]:
     """Embedded passages of the official trail narratives (scripts/build_knowledge.py), vectors decoded."""
     path = DATA / "knowledge.json"

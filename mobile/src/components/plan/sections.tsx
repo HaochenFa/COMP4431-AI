@@ -127,15 +127,28 @@ export function Timeline({ steps }: { steps: TripPlan['timeline'] }) {
   );
 }
 
+const MAX_ROUTES = 6;
+
+/** A busy stop has up to 50 routes: name the first few and count the rest. */
+function routeList(routes: string[]) {
+  if (routes.length <= MAX_ROUTES) return routes.join(', ');
+  return `${routes.slice(0, MAX_ROUTES).join(', ')} +${routes.length - MAX_ROUTES} more`;
+}
+
+/** Stops are listed up to 5 km out (backend MAX_M): metres up to 1 km, then km. */
+function stopDistance(m: number) {
+  return m < 1000 ? `${m} m` : `${(m / 1000).toFixed(1)} km`;
+}
+
 function StopRows({ stops }: { stops: BusStop[] }) {
-  if (!stops.length) return <ListRow icon="bus" iconColor="text3" title={<T color="text2">No bus stop within 1 km</T>} />;
+  if (!stops.length) return <ListRow icon="bus" iconColor="text3" title={<T color="text2">No bus stop within 5 km</T>} />;
   return stops.map((s) => (
     <ListRow
       key={`${s.name}-${s.distance_m}`}
       icon="bus"
       title={s.name}
       titleLines={2}
-      subtitle={`${s.distance_m} m away · ${s.routes.join(', ')}`}
+      subtitle={`${stopDistance(s.distance_m)} away ·${routeList(s.routes)}`}
       subtitleLines={2}
     />
   ));
@@ -143,7 +156,8 @@ function StopRows({ stops }: { stops: BusStop[] }) {
 
 /** "Getting there & back": the nearest bus stops to the trail's start and finish. Official data shown as is; the agent never names routes. */
 export function AccessSection({ access }: { access?: TrailAccess | null }) {
-  if (!access) return null;
+  // No data, or no stop within range of either end: two "no bus stop" rows say nothing useful.
+  if (!access || (!access.start.length && !access.finish.length)) return null;
   return (
     <View>
       <SectionTitle>Getting there & back</SectionTitle>

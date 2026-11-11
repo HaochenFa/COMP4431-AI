@@ -6,7 +6,7 @@ import math
 import re
 from typing import Any
 
-MAX_M = 1000
+MAX_M = 5000
 MAX_STOPS = 3
 
 
@@ -40,6 +40,17 @@ def nearest_stops(point: tuple[float, float], stops: list[dict[str, Any]], limit
         {"name": s["name"], "name_zh": s["name_zh"], "distance_m": int(round(d / 10.0)) * 10, "routes": sorted(routes[s["name"]], key=_route_key)}
         for d, s in hits
     ]
+
+
+def route_label(short_name: str, agency_id: str) -> str | None:
+    """The route number as shown ("9", "GMB 9A"), or None for a route with no number.
+
+    The feed's cross-boundary coaches carry a name ("Kwun Tong - Huanggang") where the number goes.
+    """
+    number = short_name.strip()
+    if not re.search(r"\d", number):
+        return None
+    return f"GMB {number}" if agency_id == "GMB" else number
 
 
 def _route_key(r: str):

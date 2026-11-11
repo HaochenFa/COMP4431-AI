@@ -22,7 +22,7 @@ There is no route planner yet: the agent still shows travel to and from a trail 
 
 **Additional**
 
-- **Getting there & back.** The plan and trail pages list the nearest bus stops (up to 3 within 1 km, straight-line distance, route numbers) to each trail's start and finish, from the Transport Department GTFS feed. It is display-only data like the trail stats: the agent never sees it or names routes, and the safety gate is unchanged.
+- **Getting there & back.** The plan and trail pages list the nearest bus stops (up to 3 within 5 km, straight-line distance, route numbers) to each trail's start and finish, from the Transport Department GTFS feed. It is display-only data like the trail stats: the agent never sees it or names routes, and the safety gate is unchanged.
 - **Provider-agnostic agent harness.** One loop runs on the Anthropic Messages API, OpenAI Chat Completions (and any OpenAI-compatible server: xAI Grok, DeepSeek, OpenRouter, Ollama), or the OpenAI Responses API (OpenAI or xAI). You switch with `LLM_PROFILE` in `backend/config.yaml`.
 - **Safety gate.** `present_plan` and `refuse` are blocked until the agent has actually checked closures and weather (and sunset, for plans) for those trails on that date. A plan is also blocked when any of its figures (km, hours, sunset) differ from what the tools returned, or when it names a transport route no tool returned. Plans beyond the HKO 9-day forecast are marked Provisional, not Go.
 - **Question cards.** When information is missing, the agent pauses and shows single-choice, multiple-choice or free-text cards. It resumes when you answer.

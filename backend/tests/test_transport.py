@@ -1,11 +1,11 @@
 """Nearest bus stops, on a tiny fake dataset (no network, no GTFS)."""
 
-from app.transport import distance_m, nearest_stops
+from app.transport import distance_m, nearest_stops, route_label
 
 ORIGIN = (22.0, 114.0)
 # 0.001 degrees of latitude is about 111 m
 STOPS = [
-    {"name": "FAR", "name_zh": "遠", "lat": 22.02, "lng": 114.0, "routes": ["1"]},  # ~2.2 km
+    {"name": "FAR", "name_zh": "遠", "lat": 22.06, "lng": 114.0, "routes": ["1"]},  # ~6.7 km
     {"name": "B", "name_zh": "乙", "lat": 22.003, "lng": 114.0, "routes": ["20", "3"]},  # ~330 m
     {"name": "A", "name_zh": "甲", "lat": 22.001, "lng": 114.0, "routes": ["9"]},  # ~110 m
     {"name": "C", "name_zh": "丙", "lat": 22.006, "lng": 114.0, "routes": ["X1"]},  # ~670 m
@@ -14,11 +14,17 @@ STOPS = [
 ]
 
 
+def test_route_labels_keep_numbers_and_drop_named_coaches():
+    assert route_label("9", "CTB") == "9"
+    assert route_label("9A", "GMB") == "GMB 9A"
+    assert route_label("Kwun Tong - Huanggang", "XB") is None
+
+
 def test_distance_is_metres():
     assert 110 < distance_m(ORIGIN, (22.001, 114.0)) < 112
 
 
-def test_three_nearest_within_1km_nearest_first():
+def test_three_nearest_within_5km_nearest_first():
     out = nearest_stops(ORIGIN, STOPS)
     assert [s["name"] for s in out] == ["A", "B", "C"]
     assert [s["distance_m"] for s in out] == [110, 330, 670]

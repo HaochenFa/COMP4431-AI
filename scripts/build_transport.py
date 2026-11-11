@@ -20,7 +20,7 @@ import httpx
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "backend"))
-from app.transport import _route_key, nearest_stops  # noqa: E402
+from app.transport import MAX_M, _route_key, nearest_stops, route_label  # noqa: E402
 
 DATA = ROOT / "data"
 RAW = DATA / "gtfs_raw"
@@ -64,9 +64,9 @@ def build_stops() -> list[dict]:
     for st in rows("en", "stop_times"):
         rid = trips.get(st["trip_id"])
         if rid:
-            r = routes[rid]
-            number = r["route_short_name"]
-            served[st["stop_id"]].add(f"GMB {number}" if r["agency_id"] == "GMB" else number)
+            label = route_label(routes[rid]["route_short_name"], routes[rid]["agency_id"])
+            if label:
+                served[st["stop_id"]].add(label)
     zh = {s["stop_id"]: clean_name(s["stop_name"]) for s in rows("tc", "stops")}
     out = []
     for s in rows("en", "stops"):
@@ -110,7 +110,7 @@ def main() -> None:
         out[t["id"]] = {"start": start, "finish": finish}
     result = {"source": SOURCE, "downloaded": date.today().isoformat(), "trails": out}
     (DATA / "transport.json").write_text(json.dumps(result, ensure_ascii=False, indent=1) + "\n")
-    print(f"wrote data/transport.json: {len(out)} of {len(trails)} trails, {empty} ends with no stop within 1 km")
+    print(f"wrote data/transport.json: {len(out)} of {len(trails)} trails, {empty} ends with no stop within {MAX_M // 1000} km")
 
 
 if __name__ == "__main__":

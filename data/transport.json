@@ -286,7 +286,35 @@
    ]
   },
   "hk_6": {
-   "start": [],
+   "start": [
+    {
+     "name": "NEW BRIDGE, TAI TAM ROAD",
+     "name_zh": "新橋面, 大潭道",
+     "distance_m": 1340,
+     "routes": [
+      "9",
+      "14",
+      "314"
+     ]
+    },
+    {
+     "name": "HONG SHING STREET, NEAR KORNHILL BLOCK B",
+     "name_zh": "康盛街,近康怡花園Ｂ座",
+     "distance_m": 1450,
+     "routes": [
+      "GMB 33M"
+     ]
+    },
+    {
+     "name": "HONG SHING STREET, NEAR KORNHILL RECREATION CLUB",
+     "name_zh": "康盛街,近康怡花園俱樂部",
+     "distance_m": 1470,
+     "routes": [
+      "GMB 32",
+      "GMB 33"
+     ]
+    }
+   ],
    "finish": [
     {
      "name": "TAI TAM RESERVOIR (NORTH), TAI TAM ROAD",
@@ -415,7 +443,35 @@
      ]
     }
    ],
-   "finish": []
+   "finish": [
+    {
+     "name": "NEW BRIDGE, TAI TAM ROAD",
+     "name_zh": "新橋面, 大潭道",
+     "distance_m": 1340,
+     "routes": [
+      "9",
+      "14",
+      "314"
+     ]
+    },
+    {
+     "name": "HONG SHING STREET, NEAR KORNHILL BLOCK B",
+     "name_zh": "康盛街,近康怡花園Ｂ座",
+     "distance_m": 1450,
+     "routes": [
+      "GMB 33M"
+     ]
+    },
+    {
+     "name": "HONG SHING STREET, NEAR KORNHILL RECREATION CLUB",
+     "name_zh": "康盛街,近康怡花園俱樂部",
+     "distance_m": 1470,
+     "routes": [
+      "GMB 32",
+      "GMB 33"
+     ]
+    }
+   ]
   },
   "hk_8": {
    "start": [
@@ -614,6 +670,28 @@
       "21",
       "N1"
      ]
+    },
+    {
+     "name": "SUN FUNG TSUEN",
+     "name_zh": "新鳳村",
+     "distance_m": 1060,
+     "routes": [
+      "1",
+      "11",
+      "21",
+      "N1"
+     ]
+    },
+    {
+     "name": "KEUNG SHAN MANAGEMENT CENTRE",
+     "name_zh": "羌山管理站",
+     "distance_m": 1080,
+     "routes": [
+      "1",
+      "11",
+      "21",
+      "N1"
+     ]
     }
    ]
   },
@@ -623,6 +701,28 @@
      "name": "LING YAN MONASTERY",
      "name_zh": "靈隱寺",
      "distance_m": 970,
+     "routes": [
+      "1",
+      "11",
+      "21",
+      "N1"
+     ]
+    },
+    {
+     "name": "SUN FUNG TSUEN",
+     "name_zh": "新鳳村",
+     "distance_m": 1060,
+     "routes": [
+      "1",
+      "11",
+      "21",
+      "N1"
+     ]
+    },
+    {
+     "name": "KEUNG SHAN MANAGEMENT CENTRE",
+     "name_zh": "羌山管理站",
+     "distance_m": 1080,
      "routes": [
       "1",
       "11",
@@ -669,7 +769,45 @@
    ]
   },
   "lt_8": {
-   "start": [],
+   "start": [
+    {
+     "name": "SHA TSUI CORRECTIONAL INSTITUTION",
+     "name_zh": "沙咀懲教所",
+     "distance_m": 3350,
+     "routes": [
+      "1",
+      "11",
+      "11A"
+     ]
+    },
+    {
+     "name": "SHA TSUI",
+     "name_zh": "沙咀",
+     "distance_m": 3380,
+     "routes": [
+      "1",
+      "2",
+      "11",
+      "11A",
+      "23",
+      "N1",
+      "X11R"
+     ]
+    },
+    {
+     "name": "SHEK PIK POLICE STAND",
+     "name_zh": "石壁警崗",
+     "distance_m": 3780,
+     "routes": [
+      "1",
+      "2",
+      "11",
+      "11A",
+      "23",
+      "N1"
+     ]
+    }
+   ],
    "finish": [
     {
      "name": "SHA TSUI",
@@ -890,6 +1028,27 @@
       "21",
       "23"
      ]
+    },
+    {
+     "name": "NGONG PING",
+     "name_zh": "昂坪",
+     "distance_m": 1040,
+     "routes": [
+      "1R",
+      "2",
+      "21",
+      "23"
+     ]
+    },
+    {
+     "name": "SAN HOI TING",
+     "name_zh": "山海亭",
+     "distance_m": 2010,
+     "routes": [
+      "2",
+      "21",
+      "23"
+     ]
     }
    ],
    "finish": [
@@ -964,7 +1123,45 @@
      ]
     }
    ],
-   "finish": []
+   "finish": [
+    {
+     "name": "SHA TSUI CORRECTIONAL INSTITUTION",
+     "name_zh": "沙咀懲教所",
+     "distance_m": 3350,
+     "routes": [
+      "1",
+      "11",
+      "11A"
+     ]
+    },
+    {
+     "name": "SHA TSUI",
+     "name_zh": "沙咀",
+     "distance_m": 3380,
+     "routes": [
+      "1",
+      "2",
+      "11",
+      "11A",
+      "23",
+      "N1",
+      "X11R"
+     ]
+    },
+    {
+     "name": "SHEK PIK POLICE STAND",
+     "name_zh": "石壁警崗",
+     "distance_m": 3780,
+     "routes": [
+      "1",
+      "2",
+      "11",
+      "11A",
+      "23",
+      "N1"
+     ]
+    }
+   ]
   },
   "lt_11": {
    "start": [
@@ -1163,6 +1360,38 @@
       "N35",
       "X11R"
      ]
+    },
+    {
+     "name": "LEYBURN VILLAS",
+     "name_zh": "麗濱別墅",
+     "distance_m": 1560,
+     "routes": [
+      "1",
+      "2",
+      "4",
+      "11",
+      "11A",
+      "23",
+      "A35",
+      "N1",
+      "N35"
+     ]
+    },
+    {
+     "name": "BUTTERFLY CREST",
+     "name_zh": "蝶崗",
+     "distance_m": 1590,
+     "routes": [
+      "1",
+      "2",
+      "4",
+      "11",
+      "11A",
+      "23",
+      "A35",
+      "N1",
+      "N35"
+     ]
     }
    ],
    "finish": [
@@ -1171,6 +1400,27 @@
      "name_zh": "昂坪市集",
      "distance_m": 910,
      "routes": [
+      "21",
+      "23"
+     ]
+    },
+    {
+     "name": "NGONG PING",
+     "name_zh": "昂坪",
+     "distance_m": 1040,
+     "routes": [
+      "1R",
+      "2",
+      "21",
+      "23"
+     ]
+    },
+    {
+     "name": "SAN HOI TING",
+     "name_zh": "山海亭",
+     "distance_m": 2010,
+     "routes": [
+      "2",
       "21",
       "23"
      ]
@@ -1236,6 +1486,38 @@
       "N35",
       "X11R"
      ]
+    },
+    {
+     "name": "LEYBURN VILLAS",
+     "name_zh": "麗濱別墅",
+     "distance_m": 1560,
+     "routes": [
+      "1",
+      "2",
+      "4",
+      "11",
+      "11A",
+      "23",
+      "A35",
+      "N1",
+      "N35"
+     ]
+    },
+    {
+     "name": "BUTTERFLY CREST",
+     "name_zh": "蝶崗",
+     "distance_m": 1590,
+     "routes": [
+      "1",
+      "2",
+      "4",
+      "11",
+      "11A",
+      "23",
+      "A35",
+      "N1",
+      "N35"
+     ]
     }
    ]
   },
@@ -1270,10 +1552,66 @@
      ]
     }
    ],
-   "finish": []
+   "finish": [
+    {
+     "name": "THE EAST DAM, HIGH ISLAND RESERVOIR",
+     "name_zh": "萬宜水庫東壩",
+     "distance_m": 1130,
+     "routes": [
+      "GMB 9A"
+     ]
+    },
+    {
+     "name": "THE WEST DAM, HIGH ISLAND RESERVOIR",
+     "name_zh": "萬宜水庫西壩",
+     "distance_m": 3540,
+     "routes": [
+      "GMB 9A"
+     ]
+    }
+   ]
   },
   "mc_10": {
-   "start": [],
+   "start": [
+    {
+     "name": "SHEK WU TONG (HO PUI) MINIBUS TERMINUS",
+     "name_zh": "石湖塘(河背)小巴總站",
+     "distance_m": 2570,
+     "routes": [
+      "GMB 71",
+      "GMB 71A"
+     ]
+    },
+    {
+     "name": "RHINE GARDEN, CASTLE PEAK ROAD",
+     "name_zh": "海韻花園, 青山公路",
+     "distance_m": 2570,
+     "routes": [
+      "48P",
+      "52P",
+      "52X",
+      "53",
+      "234A",
+      "234B",
+      "234C",
+      "234D",
+      "261B",
+      "952",
+      "952C",
+      "A38",
+      "N952"
+     ]
+    },
+    {
+     "name": "CASTLE PEAK ROAD-SHAM TSENG OUTSIDE RHINE GARDEN",
+     "name_zh": "青山公路-深井段海韻花園外",
+     "distance_m": 2580,
+     "routes": [
+      "GMB 302",
+      "GMB 308M"
+     ]
+    }
+   ],
    "finish": [
     {
      "name": "HOH FUK TONG COLLEGE",
@@ -1324,7 +1662,24 @@
    ]
   },
   "mc_2": {
-   "start": [],
+   "start": [
+    {
+     "name": "THE EAST DAM, HIGH ISLAND RESERVOIR",
+     "name_zh": "萬宜水庫東壩",
+     "distance_m": 1130,
+     "routes": [
+      "GMB 9A"
+     ]
+    },
+    {
+     "name": "THE WEST DAM, HIGH ISLAND RESERVOIR",
+     "name_zh": "萬宜水庫西壩",
+     "distance_m": 3540,
+     "routes": [
+      "GMB 9A"
+     ]
+    }
+   ],
    "finish": [
     {
      "name": "PAK TAM AU",
@@ -1455,10 +1810,200 @@
      ]
     }
    ],
-   "finish": []
+   "finish": [
+    {
+     "name": "HO CHUNG ROAD, KAI HAM",
+     "name_zh": "蠔涌路, 界咸",
+     "distance_m": 1690,
+     "routes": [
+      "GMB 2"
+     ]
+    },
+    {
+     "name": "TATE'S CAIRN TUNNEL BUS-BUS INTERCHANGE",
+     "name_zh": "大老山隧道巴士轉乘站",
+     "distance_m": 1960,
+     "routes": [
+      "74",
+      "74B",
+      "74C",
+      "74D",
+      "74E",
+      "74F",
+      "74P",
+      "74X",
+      "75X",
+      "78C",
+      "78P",
+      "78X",
+      "80X",
+      "82X",
+      "83A",
+      "83X",
+      "84M",
+      "85M",
+      "85P",
+      "85S",
+      "85X",
+      "88",
+      "88X",
+      "89C",
+      "89D",
+      "89X",
+      "90",
+      "96",
+      "97",
+      "272S",
+      "274X",
+      "275X",
+      "277A",
+      "277B",
+      "277E",
+      "277P",
+      "277X",
+      "307",
+      "307A",
+      "307P",
+      "373",
+      "382",
+      "589",
+      "673",
+      "673A",
+      "673P",
+      "678",
+      "679",
+      "680",
+      "680B",
+      "680P",
+      "680X",
+      "681",
+      "681P",
+      "682",
+      "682A",
+      "682B",
+      "682P",
+      "798",
+      "798A",
+      "798P",
+      "798X",
+      "N307",
+      "N680",
+      "T74",
+      "T80",
+      "T277",
+      "X89D"
+     ]
+    },
+    {
+     "name": "TSZ WAN SHAN ROAD, OUTSIDE LOK WAH STREET PLAYGROUND",
+     "name_zh": "慈雲山道, 樂華街遊樂場外",
+     "distance_m": 2260,
+     "routes": [
+      "GMB 19",
+      "GMB 19M",
+      "GMB 19S",
+      "GMB 20"
+     ]
+    }
+   ]
   },
   "mc_5": {
-   "start": [],
+   "start": [
+    {
+     "name": "HO CHUNG ROAD, KAI HAM",
+     "name_zh": "蠔涌路, 界咸",
+     "distance_m": 1690,
+     "routes": [
+      "GMB 2"
+     ]
+    },
+    {
+     "name": "TATE'S CAIRN TUNNEL BUS-BUS INTERCHANGE",
+     "name_zh": "大老山隧道巴士轉乘站",
+     "distance_m": 1960,
+     "routes": [
+      "74",
+      "74B",
+      "74C",
+      "74D",
+      "74E",
+      "74F",
+      "74P",
+      "74X",
+      "75X",
+      "78C",
+      "78P",
+      "78X",
+      "80X",
+      "82X",
+      "83A",
+      "83X",
+      "84M",
+      "85M",
+      "85P",
+      "85S",
+      "85X",
+      "88",
+      "88X",
+      "89C",
+      "89D",
+      "89X",
+      "90",
+      "96",
+      "97",
+      "272S",
+      "274X",
+      "275X",
+      "277A",
+      "277B",
+      "277E",
+      "277P",
+      "277X",
+      "307",
+      "307A",
+      "307P",
+      "373",
+      "382",
+      "589",
+      "673",
+      "673A",
+      "673P",
+      "678",
+      "679",
+      "680",
+      "680B",
+      "680P",
+      "680X",
+      "681",
+      "681P",
+      "682",
+      "682A",
+      "682B",
+      "682P",
+      "798",
+      "798A",
+      "798P",
+      "798X",
+      "N307",
+      "N680",
+      "T74",
+      "T80",
+      "T277",
+      "X89D"
+     ]
+    },
+    {
+     "name": "TSZ WAN SHAN ROAD, OUTSIDE LOK WAH STREET PLAYGROUND",
+     "name_zh": "慈雲山道, 樂華街遊樂場外",
+     "distance_m": 2260,
+     "routes": [
+      "GMB 19",
+      "GMB 19M",
+      "GMB 19S",
+      "GMB 20"
+     ]
+    }
+   ],
    "finish": [
     {
      "name": "SHEK LEI PUI RESERVOIR",
@@ -1585,10 +2130,62 @@
      ]
     }
    ],
-   "finish": []
+   "finish": [
+    {
+     "name": "TA TIT YAN",
+     "name_zh": "打鐵屻通路",
+     "distance_m": 1400,
+     "routes": [
+      "GMB 23S"
+     ]
+    },
+    {
+     "name": "WUN YIU ROAD, SAN UK KA",
+     "name_zh": "碗窰路, 新屋家",
+     "distance_m": 2060,
+     "routes": [
+      "GMB 23K",
+      "GMB 23S"
+     ]
+    },
+    {
+     "name": "WUN YIU ROAD, WUN YIU",
+     "name_zh": "碗窰路, 碗窰",
+     "distance_m": 2520,
+     "routes": [
+      "GMB 23K"
+     ]
+    }
+   ]
   },
   "mc_8": {
-   "start": [],
+   "start": [
+    {
+     "name": "TA TIT YAN",
+     "name_zh": "打鐵屻通路",
+     "distance_m": 1400,
+     "routes": [
+      "GMB 23S"
+     ]
+    },
+    {
+     "name": "WUN YIU ROAD, SAN UK KA",
+     "name_zh": "碗窰路, 新屋家",
+     "distance_m": 2060,
+     "routes": [
+      "GMB 23K",
+      "GMB 23S"
+     ]
+    },
+    {
+     "name": "WUN YIU ROAD, WUN YIU",
+     "name_zh": "碗窰路, 碗窰",
+     "distance_m": 2520,
+     "routes": [
+      "GMB 23K"
+     ]
+    }
+   ],
    "finish": [
     {
      "name": "TAI MO SHAN COUNTRY PARK",
@@ -1643,7 +2240,46 @@
      ]
     }
    ],
-   "finish": []
+   "finish": [
+    {
+     "name": "SHEK WU TONG (HO PUI) MINIBUS TERMINUS",
+     "name_zh": "石湖塘(河背)小巴總站",
+     "distance_m": 2570,
+     "routes": [
+      "GMB 71",
+      "GMB 71A"
+     ]
+    },
+    {
+     "name": "RHINE GARDEN, CASTLE PEAK ROAD",
+     "name_zh": "海韻花園, 青山公路",
+     "distance_m": 2570,
+     "routes": [
+      "48P",
+      "52P",
+      "52X",
+      "53",
+      "234A",
+      "234B",
+      "234C",
+      "234D",
+      "261B",
+      "952",
+      "952C",
+      "A38",
+      "N952"
+     ]
+    },
+    {
+     "name": "CASTLE PEAK ROAD-SHAM TSENG OUTSIDE RHINE GARDEN",
+     "name_zh": "青山公路-深井段海韻花園外",
+     "distance_m": 2580,
+     "routes": [
+      "GMB 302",
+      "GMB 308M"
+     ]
+    }
+   ]
   },
   "ws_1": {
    "start": [
@@ -1792,7 +2428,6 @@
       "641",
       "671",
       "A22",
-      "Kwun Tong - Huanggang",
       "N619",
       "N691",
       "T277",
@@ -1944,6 +2579,50 @@
       "GMB 82",
       "GMB 94S"
      ]
+    },
+    {
+     "name": "ON YAM ESTATE (ON CHIT STREET)",
+     "name_zh": "安蔭邨(安捷街)",
+     "distance_m": 1100,
+     "routes": [
+      "GMB 83A"
+     ]
+    },
+    {
+     "name": "SHING MUN TUNNELS BUS INTERCHANGE",
+     "name_zh": "城門隧道轉車站",
+     "distance_m": 1130,
+     "routes": [
+      "33R",
+      "40E",
+      "40X",
+      "43P",
+      "43S",
+      "43X",
+      "46P",
+      "46S",
+      "46X",
+      "47A",
+      "47X",
+      "48P",
+      "48X",
+      "49P",
+      "49X",
+      "73D",
+      "73F",
+      "73P",
+      "73X",
+      "263",
+      "263A",
+      "263B",
+      "263C",
+      "269D",
+      "273C",
+      "273P",
+      "278A",
+      "278P",
+      "278X"
+     ]
     }
    ]
   },
@@ -1957,6 +2636,50 @@
       "GMB 81",
       "GMB 82",
       "GMB 94S"
+     ]
+    },
+    {
+     "name": "ON YAM ESTATE (ON CHIT STREET)",
+     "name_zh": "安蔭邨(安捷街)",
+     "distance_m": 1100,
+     "routes": [
+      "GMB 83A"
+     ]
+    },
+    {
+     "name": "SHING MUN TUNNELS BUS INTERCHANGE",
+     "name_zh": "城門隧道轉車站",
+     "distance_m": 1130,
+     "routes": [
+      "33R",
+      "40E",
+      "40X",
+      "43P",
+      "43S",
+      "43X",
+      "46P",
+      "46S",
+      "46X",
+      "47A",
+      "47X",
+      "48P",
+      "48X",
+      "49P",
+      "49X",
+      "73D",
+      "73F",
+      "73P",
+      "73X",
+      "263",
+      "263A",
+      "263B",
+      "263C",
+      "269D",
+      "273C",
+      "273P",
+      "278A",
+      "278P",
+      "278X"
      ]
     }
    ],
@@ -2016,10 +2739,84 @@
      ]
     }
    ],
-   "finish": []
+   "finish": [
+    {
+     "name": "FU TIP ESTATE",
+     "name_zh": "富蝶邨",
+     "distance_m": 1610,
+     "routes": [
+      "GMB 24"
+     ]
+    },
+    {
+     "name": "KAU LUNG HANG",
+     "name_zh": "九龍坑",
+     "distance_m": 1610,
+     "routes": [
+      "73",
+      "73A",
+      "73B",
+      "74C",
+      "74D",
+      "271P",
+      "273C",
+      "373",
+      "GMB 25B",
+      "N373",
+      "NB73"
+     ]
+    },
+    {
+     "name": "FUNG YUEN BUS TERMINUS",
+     "name_zh": "鳳園總站",
+     "distance_m": 1620,
+     "routes": [
+      "72C",
+      "73P",
+      "74E"
+     ]
+    }
+   ]
   },
   "ws_9": {
-   "start": [],
+   "start": [
+    {
+     "name": "FU TIP ESTATE",
+     "name_zh": "富蝶邨",
+     "distance_m": 1610,
+     "routes": [
+      "GMB 24"
+     ]
+    },
+    {
+     "name": "KAU LUNG HANG",
+     "name_zh": "九龍坑",
+     "distance_m": 1610,
+     "routes": [
+      "73",
+      "73A",
+      "73B",
+      "74C",
+      "74D",
+      "271P",
+      "273C",
+      "373",
+      "GMB 25B",
+      "N373",
+      "NB73"
+     ]
+    },
+    {
+     "name": "FUNG YUEN BUS TERMINUS",
+     "name_zh": "鳳園總站",
+     "distance_m": 1620,
+     "routes": [
+      "72C",
+      "73P",
+      "74E"
+     ]
+    }
+   ],
    "finish": [
     {
      "name": "PLOVER COVE COUNTRY PARK",
@@ -2074,7 +2871,36 @@
      ]
     }
    ],
-   "finish": []
+   "finish": [
+    {
+     "name": "LUK KENG ROAD, NEAR LUK KENG WONG UK",
+     "name_zh": "鹿頸路, 近鹿頸黃屋",
+     "distance_m": 1450,
+     "routes": [
+      "GMB 56K"
+     ]
+    },
+    {
+     "name": "THE PUBLIC CAR PARK AT BRIDE'S POOL ROAD NEAR LUK KENG ROAD (TERMINUS)",
+     "name_zh": "新娘潭路近鹿頸路的停車灣(總站)",
+     "distance_m": 1500,
+     "routes": [
+      "GMB 56K"
+     ]
+    },
+    {
+     "name": "WO HANG",
+     "name_zh": "禾坑",
+     "distance_m": 1860,
+     "routes": [
+      "78",
+      "78K",
+      "78S",
+      "277A",
+      "N78"
+     ]
+    }
+   ]
   },
   "ws_4": {
    "start": [
@@ -2258,6 +3084,22 @@
      "routes": [
       "GMB 81"
      ]
+    },
+    {
+     "name": "KWONG PAN TIN TSUEN SECTION 2",
+     "name_zh": "光板田村二段",
+     "distance_m": 1120,
+     "routes": [
+      "51"
+     ]
+    },
+    {
+     "name": "ROUTE TWISK AT THE BUS LAY-BY NEAR THE CLIVEDEN",
+     "name_zh": "荃錦公路近寶雲滙的巴士停車灣",
+     "distance_m": 1140,
+     "routes": [
+      "GMB 80"
+     ]
     }
    ],
    "finish": [
@@ -2306,11 +3148,52 @@
       "278P",
       "278X"
      ]
+    },
+    {
+     "name": "WO YIP HOP ROAD OUTSIDE CHUK SHUE HOUSE OF LEI MUK SHUE ESTATE",
+     "name_zh": "和宜合道, 梨木樹邨竹樹樓外",
+     "distance_m": 1110,
+     "routes": [
+      "GMB 403",
+      "GMB 403A",
+      "GMB 403P",
+      "GMB 403X",
+      "GMB 406"
+     ]
     }
    ]
   },
   "cty_2": {
-   "start": [],
+   "start": [
+    {
+     "name": "LUK KENG ROAD, NEAR LUK KENG WONG UK",
+     "name_zh": "鹿頸路, 近鹿頸黃屋",
+     "distance_m": 1300,
+     "routes": [
+      "GMB 56K"
+     ]
+    },
+    {
+     "name": "THE PUBLIC CAR PARK AT BRIDE'S POOL ROAD NEAR LUK KENG ROAD (TERMINUS)",
+     "name_zh": "新娘潭路近鹿頸路的停車灣(總站)",
+     "distance_m": 1360,
+     "routes": [
+      "GMB 56K"
+     ]
+    },
+    {
+     "name": "WO HANG",
+     "name_zh": "禾坑",
+     "distance_m": 1700,
+     "routes": [
+      "78",
+      "78K",
+      "78S",
+      "277A",
+      "N78"
+     ]
+    }
+   ],
    "finish": [
     {
      "name": "TAN CHUK HANG (SZE TAU LENG TSUEN)",
@@ -2318,6 +3201,22 @@
      "distance_m": 350,
      "routes": [
       "GMB 56B"
+     ]
+    },
+    {
+     "name": "KAN TAU TSUEN",
+     "name_zh": "簡頭村路口",
+     "distance_m": 1060,
+     "routes": [
+      "GMB 56B"
+     ]
+    },
+    {
+     "name": "HOK TAU WAI MINIBUS TERMINUS",
+     "name_zh": "鶴藪圍小巴總站",
+     "distance_m": 1100,
+     "routes": [
+      "GMB 52B"
      ]
     }
    ]
@@ -2339,6 +3238,15 @@
      "routes": [
       "GMB 56B"
      ]
+    },
+    {
+     "name": "QUEEN'S HILL",
+     "name_zh": "皇后山",
+     "distance_m": 1120,
+     "routes": [
+      "GMB 503",
+      "GMB 503K"
+     ]
     }
    ],
    "finish": [
@@ -2356,6 +3264,15 @@
      "distance_m": 840,
      "routes": [
       "GMB 56B"
+     ]
+    },
+    {
+     "name": "QUEEN'S HILL",
+     "name_zh": "皇后山",
+     "distance_m": 1120,
+     "routes": [
+      "GMB 503",
+      "GMB 503K"
      ]
     }
    ]
@@ -2389,7 +3306,35 @@
      ]
     }
    ],
-   "finish": []
+   "finish": [
+    {
+     "name": "SHEK WU TONG (HO PUI) MINIBUS TERMINUS",
+     "name_zh": "石湖塘(河背)小巴總站",
+     "distance_m": 2650,
+     "routes": [
+      "GMB 71",
+      "GMB 71A"
+     ]
+    },
+    {
+     "name": "UNNAMED ACCESS ROAD, NEAR CONSTRUCTION MACHINERY TECHNICAL TRAINING CENTER",
+     "name_zh": "未命名通道, 近建造業機械技術訓練中心",
+     "distance_m": 2710,
+     "routes": [
+      "GMB 73",
+      "GMB 73A"
+     ]
+    },
+    {
+     "name": "HO PUI TSUEN ACCESS ROAD, NEAR MA ON KONG",
+     "name_zh": "河背村通道, 近馬鞍崗",
+     "distance_m": 2740,
+     "routes": [
+      "GMB 71",
+      "GMB 71A"
+     ]
+    }
+   ]
   },
   "cty_5": {
    "start": [
@@ -2400,6 +3345,36 @@
      "routes": [
       "GMB 52B"
      ]
+    },
+    {
+     "name": "QUEEN'S HILL",
+     "name_zh": "皇后山",
+     "distance_m": 1080,
+     "routes": [
+      "GMB 503",
+      "GMB 503K"
+     ]
+    },
+    {
+     "name": "SHAN LAI COURT, LUNG MA ROAD",
+     "name_zh": "山麗苑, 龍馬路",
+     "distance_m": 1220,
+     "routes": [
+      "56A",
+      "78A",
+      "78B",
+      "78C",
+      "78P",
+      "78X",
+      "79",
+      "79P",
+      "79X",
+      "278A",
+      "679",
+      "979",
+      "A43P",
+      "N78"
+     ]
     }
    ],
    "finish": [
@@ -2409,6 +3384,36 @@
      "distance_m": 920,
      "routes": [
       "GMB 52B"
+     ]
+    },
+    {
+     "name": "QUEEN'S HILL",
+     "name_zh": "皇后山",
+     "distance_m": 1080,
+     "routes": [
+      "GMB 503",
+      "GMB 503K"
+     ]
+    },
+    {
+     "name": "SHAN LAI COURT, LUNG MA ROAD",
+     "name_zh": "山麗苑, 龍馬路",
+     "distance_m": 1220,
+     "routes": [
+      "56A",
+      "78A",
+      "78B",
+      "78C",
+      "78P",
+      "78X",
+      "79",
+      "79P",
+      "79X",
+      "278A",
+      "679",
+      "979",
+      "A43P",
+      "N78"
      ]
     }
    ]
@@ -2512,12 +3517,83 @@
      "routes": [
       "GMB 7"
      ]
+    },
+    {
+     "name": "TAI TAN BARBECUE SITE",
+     "name_zh": "大灘燒烤場",
+     "distance_m": 2700,
+     "routes": [
+      "94",
+      "96R",
+      "289R"
+     ]
+    },
+    {
+     "name": "TAI TAN",
+     "name_zh": "大灘",
+     "distance_m": 2740,
+     "routes": [
+      "94",
+      "96R",
+      "289R"
+     ]
     }
    ]
   },
   "cty_8": {
-   "start": [],
-   "finish": []
+   "start": [
+    {
+     "name": "TAI AU MUN",
+     "name_zh": "大坳門",
+     "distance_m": 1190,
+     "routes": [
+      "91"
+     ]
+    },
+    {
+     "name": "TAI AU MUN ROAD, NEAR TAI WAN TAU ROAD",
+     "name_zh": "大坳門路, 近大環頭路",
+     "distance_m": 1200,
+     "routes": [
+      "GMB 16",
+      "GMB 103"
+     ]
+    },
+    {
+     "name": "CLEAR WATER BAY ROAD, NEAR TAI AU MUN",
+     "name_zh": "清水灣道, 近大坳門",
+     "distance_m": 1200,
+     "routes": [
+      "GMB 16"
+     ]
+    }
+   ],
+   "finish": [
+    {
+     "name": "HONG KONG ADVENTIST COLLEGE",
+     "name_zh": "香港三育書院",
+     "distance_m": 1780,
+     "routes": [
+      "91"
+     ]
+    },
+    {
+     "name": "CLEAR WATER BAY ROAD, NEAR HONG KONG ADVENTIST COLLEGE",
+     "name_zh": "清水灣道, 近香港三育書院",
+     "distance_m": 1780,
+     "routes": [
+      "GMB 16"
+     ]
+    },
+    {
+     "name": "CLEAR WATER BAY ROAD, NEAR SHEUNG SZE WAN",
+     "name_zh": "清水灣道, 近相思灣",
+     "distance_m": 1790,
+     "routes": [
+      "GMB 16"
+     ]
+    }
+   ]
   },
   "cty_9": {
    "start": [
@@ -2552,10 +3628,79 @@
      ]
     }
    ],
-   "finish": []
+   "finish": [
+    {
+     "name": "TSENG TAU TSUEN",
+     "name_zh": "十四鄉, 井頭村外",
+     "distance_m": 2630,
+     "routes": [
+      "GMB 807K",
+      "GMB 807S"
+     ]
+    },
+    {
+     "name": "SAI SHA RESIDENCES",
+     "name_zh": "西沙灣",
+     "distance_m": 2820,
+     "routes": [
+      "287",
+      "580",
+      "581",
+      "582",
+      "586",
+      "587",
+      "589",
+      "980X",
+      "A41P"
+     ]
+    },
+    {
+     "name": "KEI LING HA SAN WAI",
+     "name_zh": "企嶺下新圍",
+     "distance_m": 2820,
+     "routes": [
+      "33R",
+      "74R",
+      "99",
+      "99R",
+      "289R",
+      "299X"
+     ]
+    }
+   ]
   },
   "cty_10": {
-   "start": [],
+   "start": [
+    {
+     "name": "THE WEST DAM, HIGH ISLAND RESERVOIR",
+     "name_zh": "萬宜水庫西壩",
+     "distance_m": 2960,
+     "routes": [
+      "GMB 9A"
+     ]
+    },
+    {
+     "name": "LADY MACLEHOSE HOLIDAY VILLAGE",
+     "name_zh": "麥理浩夫人度假村",
+     "distance_m": 3700,
+     "routes": [
+      "94",
+      "96R",
+      "289R",
+      "GMB 9"
+     ]
+    },
+    {
+     "name": "TSAK YUE WU",
+     "name_zh": "鯽魚湖",
+     "distance_m": 3750,
+     "routes": [
+      "94",
+      "96R",
+      "289R"
+     ]
+    }
+   ],
    "finish": [
     {
      "name": "LADY MACLEHOSE HOLIDAY VILLAGE",
@@ -2606,6 +3751,16 @@
      "name": "PAK TAM AU MANAGEMENT CENTRE",
      "name_zh": "北潭凹管理站",
      "distance_m": 310,
+     "routes": [
+      "94",
+      "96R",
+      "289R"
+     ]
+    },
+    {
+     "name": "TO KWA PIN",
+     "name_zh": "土瓜坪",
+     "distance_m": 1040,
      "routes": [
       "94",
       "96R",
@@ -2691,6 +3846,24 @@
      "routes": [
       "GMB 9A"
      ]
+    },
+    {
+     "name": "TAI MONG TSAI ROAD, SHEUNG YIU",
+     "name_zh": "大網仔路, 上窰",
+     "distance_m": 2410,
+     "routes": [
+      "GMB 9A"
+     ]
+    },
+    {
+     "name": "SHEUNG YIU",
+     "name_zh": "上窰",
+     "distance_m": 2410,
+     "routes": [
+      "94",
+      "96R",
+      "289R"
+     ]
     }
    ]
   },
@@ -2753,7 +3926,64 @@
    ]
   },
   "cty_14": {
-   "start": [],
+   "start": [
+    {
+     "name": "KAM CHUN COURT, MA ON SHAN ROAD",
+     "name_zh": "錦駿苑, 馬鞍山路",
+     "distance_m": 1100,
+     "routes": [
+      "40E",
+      "40X",
+      "85M",
+      "85P",
+      "85X",
+      "86C",
+      "86K",
+      "87C",
+      "87D",
+      "87K",
+      "89D",
+      "89S",
+      "274P",
+      "286C",
+      "287",
+      "299X",
+      "382",
+      "580",
+      "582",
+      "586",
+      "587",
+      "589",
+      "680",
+      "681",
+      "682",
+      "682P",
+      "B12",
+      "N281",
+      "N680"
+     ]
+    },
+    {
+     "name": "MA ON SHAN ROAD NEAR KAM CHUN COURT",
+     "name_zh": "馬鞍山路近錦駿苑",
+     "distance_m": 1110,
+     "routes": [
+      "GMB 803",
+      "GMB 805S",
+      "GMB 807K",
+      "GMB 808",
+      "GMB 808P"
+     ]
+    },
+    {
+     "name": "HANG FAI STREET, OUTSIDE SEWAGE PUMPING STATION",
+     "name_zh": "恆輝街, 污水抽水廠外",
+     "distance_m": 1170,
+     "routes": [
+      "GMB 807A"
+     ]
+    }
+   ],
    "finish": [
     {
      "name": "PAK KONG AU ROAD, NEAR HUNG FA TSUEN",
@@ -2783,12 +4013,174 @@
    ]
   },
   "cty_15": {
-   "start": [],
-   "finish": []
+   "start": [
+    {
+     "name": "LO WAI TSUEN",
+     "name_zh": "老圍村",
+     "distance_m": 1090,
+     "routes": [
+      "1",
+      "2",
+      "3M",
+      "4",
+      "A35",
+      "N1",
+      "N35"
+     ]
+    },
+    {
+     "name": "SAN WAI TSUEN",
+     "name_zh": "新圍村",
+     "distance_m": 1160,
+     "routes": [
+      "1",
+      "2",
+      "3M",
+      "4",
+      "A35",
+      "N1",
+      "N35"
+     ]
+    },
+    {
+     "name": "PUI O PETROL STATION",
+     "name_zh": "貝澳油站",
+     "distance_m": 1200,
+     "routes": [
+      "1",
+      "2",
+      "3M",
+      "4",
+      "A35",
+      "N1",
+      "N35"
+     ]
+    }
+   ],
+   "finish": [
+    {
+     "name": "LO WAI TSUEN",
+     "name_zh": "老圍村",
+     "distance_m": 1090,
+     "routes": [
+      "1",
+      "2",
+      "3M",
+      "4",
+      "A35",
+      "N1",
+      "N35"
+     ]
+    },
+    {
+     "name": "SAN WAI TSUEN",
+     "name_zh": "新圍村",
+     "distance_m": 1160,
+     "routes": [
+      "1",
+      "2",
+      "3M",
+      "4",
+      "A35",
+      "N1",
+      "N35"
+     ]
+    },
+    {
+     "name": "PUI O PETROL STATION",
+     "name_zh": "貝澳油站",
+     "distance_m": 1200,
+     "routes": [
+      "1",
+      "2",
+      "3M",
+      "4",
+      "A35",
+      "N1",
+      "N35"
+     ]
+    }
+   ]
   },
   "cty_17": {
-   "start": [],
-   "finish": []
+   "start": [
+    {
+     "name": "SAN SHEK WAN 3 1/4 MILESTONE",
+     "name_zh": "散石灣中蘆",
+     "distance_m": 2160,
+     "routes": [
+      "1",
+      "2",
+      "3M",
+      "4",
+      "A35",
+      "N1",
+      "N35"
+     ]
+    },
+    {
+     "name": "NGAU AU YUEN",
+     "name_zh": "牛坳園",
+     "distance_m": 2200,
+     "routes": [
+      "1",
+      "2",
+      "3M",
+      "4",
+      "A35",
+      "N1",
+      "N35"
+     ]
+    },
+    {
+     "name": "CHEUNG SHA CATCHWATER",
+     "name_zh": "長沙引水道",
+     "distance_m": 2290,
+     "routes": [
+      "3M",
+      "11",
+      "11A",
+      "23",
+      "A35",
+      "N35"
+     ]
+    }
+   ],
+   "finish": [
+    {
+     "name": "CHEK LAP KOK NEW VILLAGE",
+     "name_zh": "赤立角新村",
+     "distance_m": 1110,
+     "routes": [
+      "34"
+     ]
+    },
+    {
+     "name": "YU TAI COURT",
+     "name_zh": "裕泰苑",
+     "distance_m": 1370,
+     "routes": [
+      "34",
+      "A35",
+      "N35"
+     ]
+    },
+    {
+     "name": "MA WAN SUN TSUEN",
+     "name_zh": "馬灣新村",
+     "distance_m": 1420,
+     "routes": [
+      "3M",
+      "11",
+      "11A",
+      "23",
+      "34",
+      "37H",
+      "A35",
+      "N35"
+     ]
+    }
+   ]
   },
   "cty_18": {
    "start": [
@@ -2875,7 +4267,45 @@
    ]
   },
   "cty_19": {
-   "start": [],
+   "start": [
+    {
+     "name": "SHA TSUI CORRECTIONAL INSTITUTION",
+     "name_zh": "沙咀懲教所",
+     "distance_m": 3160,
+     "routes": [
+      "1",
+      "11",
+      "11A"
+     ]
+    },
+    {
+     "name": "SHA TSUI",
+     "name_zh": "沙咀",
+     "distance_m": 3190,
+     "routes": [
+      "1",
+      "2",
+      "11",
+      "11A",
+      "23",
+      "N1",
+      "X11R"
+     ]
+    },
+    {
+     "name": "SHEK PIK POLICE STAND",
+     "name_zh": "石壁警崗",
+     "distance_m": 3580,
+     "routes": [
+      "1",
+      "2",
+      "11",
+      "11A",
+      "23",
+      "N1"
+     ]
+    }
+   ],
    "finish": [
     {
      "name": "LUNG CHAI",
@@ -2922,6 +4352,27 @@
       "21",
       "23"
      ]
+    },
+    {
+     "name": "NGONG PING",
+     "name_zh": "昂坪",
+     "distance_m": 1130,
+     "routes": [
+      "1R",
+      "2",
+      "21",
+      "23"
+     ]
+    },
+    {
+     "name": "SAN HOI TING",
+     "name_zh": "山海亭",
+     "distance_m": 2220,
+     "routes": [
+      "2",
+      "21",
+      "23"
+     ]
     }
    ],
    "finish": [
@@ -2930,6 +4381,27 @@
      "name_zh": "昂坪市集",
      "distance_m": 1000,
      "routes": [
+      "21",
+      "23"
+     ]
+    },
+    {
+     "name": "NGONG PING",
+     "name_zh": "昂坪",
+     "distance_m": 1130,
+     "routes": [
+      "1R",
+      "2",
+      "21",
+      "23"
+     ]
+    },
+    {
+     "name": "SAN HOI TING",
+     "name_zh": "山海亭",
+     "distance_m": 2220,
+     "routes": [
+      "2",
       "21",
       "23"
      ]
@@ -3019,7 +4491,32 @@
      ]
     }
    ],
-   "finish": []
+   "finish": [
+    {
+     "name": "CHI SUM ROAD",
+     "name_zh": "祠心路",
+     "distance_m": 1110,
+     "routes": [
+      "275R"
+     ]
+    },
+    {
+     "name": "WU KAU TANG",
+     "name_zh": "烏蛟騰",
+     "distance_m": 1220,
+     "routes": [
+      "GMB 20R"
+     ]
+    },
+    {
+     "name": "WU KAU TANG BUS TERMINUS",
+     "name_zh": "烏蛟騰總站",
+     "distance_m": 1240,
+     "routes": [
+      "275R"
+     ]
+    }
+   ]
   },
   "cty_23": {
    "start": [],
@@ -3040,9 +4537,75 @@
       "N35",
       "X11R"
      ]
+    },
+    {
+     "name": "TUNG CHUNG AU MANAGEMENT CENTRE",
+     "name_zh": "東涌坳管理站",
+     "distance_m": 1280,
+     "routes": [
+      "3M",
+      "11",
+      "11A",
+      "23",
+      "A35",
+      "N35"
+     ]
+    },
+    {
+     "name": "TUNG CHUNG AU MANAGEMENT OFFICE",
+     "name_zh": "東涌坳管理站",
+     "distance_m": 1350,
+     "routes": [
+      "3M",
+      "11",
+      "11A",
+      "23",
+      "A35",
+      "N35"
+     ]
     }
    ],
-   "finish": []
+   "finish": [
+    {
+     "name": "TUNG CHUNG AU MANAGEMENT CENTRE",
+     "name_zh": "東涌坳管理站",
+     "distance_m": 1070,
+     "routes": [
+      "3M",
+      "11",
+      "11A",
+      "23",
+      "A35",
+      "N35"
+     ]
+    },
+    {
+     "name": "TUNG CHUNG AU MANAGEMENT OFFICE",
+     "name_zh": "東涌坳管理站",
+     "distance_m": 1090,
+     "routes": [
+      "3M",
+      "11",
+      "11A",
+      "23",
+      "A35",
+      "N35"
+     ]
+    },
+    {
+     "name": "CEMETERY AREA NO. 18",
+     "name_zh": "十八區墳場",
+     "distance_m": 1120,
+     "routes": [
+      "3M",
+      "11",
+      "11A",
+      "23",
+      "A35",
+      "N35"
+     ]
+    }
+   ]
   },
   "cty_26": {
    "start": [
@@ -3106,7 +4669,35 @@
      ]
     }
    ],
-   "finish": []
+   "finish": [
+    {
+     "name": "SHEK WU TONG (HO PUI) MINIBUS TERMINUS",
+     "name_zh": "石湖塘(河背)小巴總站",
+     "distance_m": 2690,
+     "routes": [
+      "GMB 71",
+      "GMB 71A"
+     ]
+    },
+    {
+     "name": "UNNAMED ACCESS ROAD, NEAR CONSTRUCTION MACHINERY TECHNICAL TRAINING CENTER",
+     "name_zh": "未命名通道, 近建造業機械技術訓練中心",
+     "distance_m": 2740,
+     "routes": [
+      "GMB 73",
+      "GMB 73A"
+     ]
+    },
+    {
+     "name": "HO PUI TSUEN ACCESS ROAD, NEAR MA ON KONG",
+     "name_zh": "河背村通道, 近馬鞍崗",
+     "distance_m": 2780,
+     "routes": [
+      "GMB 71",
+      "GMB 71A"
+     ]
+    }
+   ]
   },
   "cty_27": {
    "start": [
@@ -3122,6 +4713,14 @@
      "name": "VIEWING POINT (ROUTE TWISK)",
      "name_zh": "荃錦公路觀景台",
      "distance_m": 640,
+     "routes": [
+      "51"
+     ]
+    },
+    {
+     "name": "SHEK KONG VILLAGE",
+     "name_zh": "石崗村",
+     "distance_m": 1370,
      "routes": [
       "51"
      ]
@@ -3171,6 +4770,26 @@
      "routes": [
       "GMB 302"
      ]
+    },
+    {
+     "name": "BELVEDERE GARDEN PHASE 3",
+     "name_zh": "麗城花園第三期",
+     "distance_m": 1010,
+     "routes": [
+      "34",
+      "34M",
+      "40",
+      "48P",
+      "48X",
+      "53",
+      "234B",
+      "234C",
+      "234D",
+      "234X",
+      "934",
+      "A38",
+      "N252"
+     ]
     }
    ],
    "finish": [
@@ -3181,12 +4800,103 @@
      "routes": [
       "K66"
      ]
+    },
+    {
+     "name": "TAI TONG ROUNDABOUT",
+     "name_zh": "大棠迴旋處",
+     "distance_m": 1050,
+     "routes": [
+      "K66"
+     ]
+    },
+    {
+     "name": "TAI TONG WONG NAI TUN TSUEN",
+     "name_zh": "大棠黃泥墩村",
+     "distance_m": 1150,
+     "routes": [
+      "K66"
+     ]
     }
    ]
   },
   "cty_30": {
-   "start": [],
-   "finish": []
+   "start": [
+    {
+     "name": "MUI WO MARKET",
+     "name_zh": "梅窩街市",
+     "distance_m": 2100,
+     "routes": [
+      "1",
+      "3M",
+      "4",
+      "A35"
+     ]
+    },
+    {
+     "name": "NGAN KING CENTRE",
+     "name_zh": "銀景中心",
+     "distance_m": 2240,
+     "routes": [
+      "1",
+      "3M",
+      "4",
+      "A35"
+     ]
+    },
+    {
+     "name": "NGAN WAN ESTATE",
+     "name_zh": "銀灣邨",
+     "distance_m": 2260,
+     "routes": [
+      "1",
+      "3M",
+      "4",
+      "A35"
+     ]
+    }
+   ],
+   "finish": [
+    {
+     "name": "DISCOVERY BAY ROAD OUTSIDE GREENFIELD COURT",
+     "name_zh": "愉景灣道翠山閣外",
+     "distance_m": 1140,
+     "routes": [
+      "DB01R",
+      "DB01RA",
+      "DB02R",
+      "DB02RA",
+      "DB02RP",
+      "DB03R",
+      "DB03RP",
+      "DB08R"
+     ]
+    },
+    {
+     "name": "DISCOVERY BAY ROAD OUTSIDE PARKRIDGE VILLAGE",
+     "name_zh": "愉景灣道明翠台外",
+     "distance_m": 1150,
+     "routes": [
+      "DB01R",
+      "DB01RP",
+      "DB02R",
+      "DB02RP",
+      "DB03R",
+      "DB08R"
+     ]
+    },
+    {
+     "name": "DISCOVERY BAY ROAD OPPOSITE GREENFIELD COURT",
+     "name_zh": "愉景灣道翠山閣對面",
+     "distance_m": 1160,
+     "routes": [
+      "DB01RA",
+      "DB02R",
+      "DB02RA",
+      "DB02RP",
+      "DB03RP"
+     ]
+    }
+   ]
   },
   "cty_31": {
    "start": [
@@ -3195,6 +4905,27 @@
      "name_zh": "昂坪市集",
      "distance_m": 890,
      "routes": [
+      "21",
+      "23"
+     ]
+    },
+    {
+     "name": "NGONG PING",
+     "name_zh": "昂坪",
+     "distance_m": 1020,
+     "routes": [
+      "1R",
+      "2",
+      "21",
+      "23"
+     ]
+    },
+    {
+     "name": "SAN HOI TING",
+     "name_zh": "山海亭",
+     "distance_m": 1980,
+     "routes": [
+      "2",
       "21",
       "23"
      ]
@@ -3269,10 +5000,77 @@
      ]
     }
    ],
-   "finish": []
+   "finish": [
+    {
+     "name": "TAI MEI TUK BUS TERMINUS",
+     "name_zh": "大美督總站",
+     "distance_m": 2460,
+     "routes": [
+      "72C",
+      "73P",
+      "74E",
+      "75K",
+      "75P",
+      "275R"
+     ]
+    },
+    {
+     "name": "YIU SHA ROAD, OUTSIDE SEANORAMA",
+     "name_zh": "耀沙路, 星漣海外",
+     "distance_m": 2480,
+     "routes": [
+      "GMB 807X",
+      "GMB 810A"
+     ]
+    },
+    {
+     "name": "TAI MEI TUK PUBLIC TRANSPORT INTERCHANGE",
+     "name_zh": "大美督公共運輸交匯處",
+     "distance_m": 2480,
+     "routes": [
+      "GMB 20C"
+     ]
+    }
+   ]
   },
   "cty_16": {
-   "start": [],
+   "start": [
+    {
+     "name": "SHA TSUI",
+     "name_zh": "沙咀",
+     "distance_m": 4480,
+     "routes": [
+      "1",
+      "2",
+      "11",
+      "11A",
+      "23",
+      "N1",
+      "X11R"
+     ]
+    },
+    {
+     "name": "SHA TSUI CORRECTIONAL INSTITUTION",
+     "name_zh": "沙咀懲教所",
+     "distance_m": 4490,
+     "routes": [
+      "1",
+      "11",
+      "11A"
+     ]
+    },
+    {
+     "name": "KEUNG SHAN MANAGEMENT CENTRE",
+     "name_zh": "羌山管理站",
+     "distance_m": 4840,
+     "routes": [
+      "1",
+      "11",
+      "21",
+      "N1"
+     ]
+    }
+   ],
    "finish": []
   },
   "cty_32": {
@@ -3394,7 +5192,32 @@
      ]
     }
    ],
-   "finish": []
+   "finish": [
+    {
+     "name": "WU KAU TANG",
+     "name_zh": "烏蛟騰",
+     "distance_m": 3190,
+     "routes": [
+      "GMB 20R"
+     ]
+    },
+    {
+     "name": "CHI SUM ROAD",
+     "name_zh": "祠心路",
+     "distance_m": 3350,
+     "routes": [
+      "275R"
+     ]
+    },
+    {
+     "name": "WU KAU TANG BUS TERMINUS",
+     "name_zh": "烏蛟騰總站",
+     "distance_m": 3410,
+     "routes": [
+      "275R"
+     ]
+    }
+   ]
   },
   "cty_1": {
    "start": [
@@ -3471,8 +5294,60 @@
    ]
   },
   "cty_34": {
-   "start": [],
-   "finish": []
+   "start": [
+    {
+     "name": "HONG KIN ROAD, NEAR LAKE COURT",
+     "name_zh": "康健路, 近泰湖閣",
+     "distance_m": 2020,
+     "routes": [
+      "GMB 4A"
+     ]
+    },
+    {
+     "name": "HONG KIN ROAD, NEAR 明發樓, MAN YEE FISHERMEN ESTATE",
+     "name_zh": "康健路, 近萬宜漁村明發樓",
+     "distance_m": 2120,
+     "routes": [
+      "GMB 4A"
+     ]
+    },
+    {
+     "name": "HONG KIN ROAD, NEAR MING SHUN VILLAGE 201",
+     "name_zh": "康健路, 近明順村２０１號",
+     "distance_m": 2120,
+     "routes": [
+      "GMB 4",
+      "GMB 4A"
+     ]
+    }
+   ],
+   "finish": [
+    {
+     "name": "HONG KIN ROAD, NEAR LAKE COURT",
+     "name_zh": "康健路, 近泰湖閣",
+     "distance_m": 3140,
+     "routes": [
+      "GMB 4A"
+     ]
+    },
+    {
+     "name": "HONG KIN ROAD, NEAR 明發樓, MAN YEE FISHERMEN ESTATE",
+     "name_zh": "康健路, 近萬宜漁村明發樓",
+     "distance_m": 3210,
+     "routes": [
+      "GMB 4A"
+     ]
+    },
+    {
+     "name": "HONG KIN ROAD, NEAR MING SHUN VILLAGE 201",
+     "name_zh": "康健路, 近明順村２０１號",
+     "distance_m": 3210,
+     "routes": [
+      "GMB 4",
+      "GMB 4A"
+     ]
+    }
+   ]
   },
   "fmy_5": {
    "start": [
@@ -3540,6 +5415,23 @@
       "GMB 71",
       "GMB 71A"
      ]
+    },
+    {
+     "name": "HO PUI TSUEN ACCESS ROAD, NEAR MA ON KONG",
+     "name_zh": "河背村通道, 近馬鞍崗",
+     "distance_m": 1220,
+     "routes": [
+      "GMB 71",
+      "GMB 71A"
+     ]
+    },
+    {
+     "name": "KAM PO ROAD, NEAR CHEUNG PO TSUEN VILLAGE OFFICE",
+     "name_zh": "錦莆路, 近長莆村村公所",
+     "distance_m": 1290,
+     "routes": [
+      "GMB 71A"
+     ]
     }
    ],
    "finish": [
@@ -3551,12 +5443,81 @@
       "GMB 71",
       "GMB 71A"
      ]
+    },
+    {
+     "name": "HO PUI TSUEN ACCESS ROAD, NEAR MA ON KONG",
+     "name_zh": "河背村通道, 近馬鞍崗",
+     "distance_m": 1220,
+     "routes": [
+      "GMB 71",
+      "GMB 71A"
+     ]
+    },
+    {
+     "name": "KAM PO ROAD, NEAR CHEUNG PO TSUEN VILLAGE OFFICE",
+     "name_zh": "錦莆路, 近長莆村村公所",
+     "distance_m": 1290,
+     "routes": [
+      "GMB 71A"
+     ]
     }
    ]
   },
   "fmy_2": {
-   "start": [],
-   "finish": []
+   "start": [
+    {
+     "name": "HOK TAU WAI MINIBUS TERMINUS",
+     "name_zh": "鶴藪圍小巴總站",
+     "distance_m": 1280,
+     "routes": [
+      "GMB 52B"
+     ]
+    },
+    {
+     "name": "TAN CHUK HANG (SZE TAU LENG TSUEN)",
+     "name_zh": "丹竹坑(獅頭嶺村)",
+     "distance_m": 1710,
+     "routes": [
+      "GMB 56B"
+     ]
+    },
+    {
+     "name": "QUEEN'S HILL",
+     "name_zh": "皇后山",
+     "distance_m": 2280,
+     "routes": [
+      "GMB 503",
+      "GMB 503K"
+     ]
+    }
+   ],
+   "finish": [
+    {
+     "name": "HOK TAU WAI MINIBUS TERMINUS",
+     "name_zh": "鶴藪圍小巴總站",
+     "distance_m": 1280,
+     "routes": [
+      "GMB 52B"
+     ]
+    },
+    {
+     "name": "TAN CHUK HANG (SZE TAU LENG TSUEN)",
+     "name_zh": "丹竹坑(獅頭嶺村)",
+     "distance_m": 1710,
+     "routes": [
+      "GMB 56B"
+     ]
+    },
+    {
+     "name": "QUEEN'S HILL",
+     "name_zh": "皇后山",
+     "distance_m": 2290,
+     "routes": [
+      "GMB 503",
+      "GMB 503K"
+     ]
+    }
+   ]
   },
   "fmy_4": {
    "start": [
@@ -4114,7 +6075,42 @@
      ]
     }
    ],
-   "finish": []
+   "finish": [
+    {
+     "name": "WONG NAI CHUNG RESERVOIR PARK, WONG NAI CHUNG GAP ROAD",
+     "name_zh": "黃泥涌水塘公園, 黃泥涌峽道",
+     "distance_m": 1610,
+     "routes": [
+      "1M",
+      "6",
+      "41A",
+      "63",
+      "76",
+      "A17"
+     ]
+    },
+    {
+     "name": "TAI TAM RESERVOIR ROAD, WONG NAI CHUNG GAP ROAD",
+     "name_zh": "大潭水塘道, 黃泥涌峽道",
+     "distance_m": 1680,
+     "routes": [
+      "1M",
+      "6",
+      "41A",
+      "63",
+      "76",
+      "A17"
+     ]
+    },
+    {
+     "name": "WONG NAI CHUNG GAP ROAD, OPPOSITE HONG KONG CRICKET CLUB",
+     "name_zh": "黃泥涌峽道, 香港木球會對面",
+     "distance_m": 1680,
+     "routes": [
+      "GMB 5"
+     ]
+    }
+   ]
   },
   "nat_7": {
    "start": [
@@ -4375,8 +6371,58 @@
    ]
   },
   "nat_15": {
-   "start": [],
-   "finish": []
+   "start": [
+    {
+     "name": "WU KAU TANG",
+     "name_zh": "烏蛟騰",
+     "distance_m": 2920,
+     "routes": [
+      "GMB 20R"
+     ]
+    },
+    {
+     "name": "CHI SUM ROAD",
+     "name_zh": "祠心路",
+     "distance_m": 3090,
+     "routes": [
+      "275R"
+     ]
+    },
+    {
+     "name": "WU KAU TANG BUS TERMINUS",
+     "name_zh": "烏蛟騰總站",
+     "distance_m": 3140,
+     "routes": [
+      "275R"
+     ]
+    }
+   ],
+   "finish": [
+    {
+     "name": "WU KAU TANG",
+     "name_zh": "烏蛟騰",
+     "distance_m": 2600,
+     "routes": [
+      "GMB 20R"
+     ]
+    },
+    {
+     "name": "CHI SUM ROAD",
+     "name_zh": "祠心路",
+     "distance_m": 2760,
+     "routes": [
+      "275R"
+     ]
+    },
+    {
+     "name": "WU KAU TANG BUS TERMINUS",
+     "name_zh": "烏蛟騰總站",
+     "distance_m": 2830,
+     "routes": [
+      "275R"
+     ]
+    }
+   ]
   },
   "nat_11": {
    "start": [
@@ -4569,6 +6615,54 @@
       "GMB 81",
       "GMB 82",
       "GMB 94S"
+     ]
+    },
+    {
+     "name": "SHING MUN TUNNELS BUS INTERCHANGE",
+     "name_zh": "城門隧道轉車站",
+     "distance_m": 1270,
+     "routes": [
+      "33R",
+      "40E",
+      "40X",
+      "43P",
+      "43S",
+      "43X",
+      "46P",
+      "46S",
+      "46X",
+      "47A",
+      "47X",
+      "48P",
+      "48X",
+      "49P",
+      "49X",
+      "73D",
+      "73F",
+      "73P",
+      "73X",
+      "263",
+      "263A",
+      "263B",
+      "263C",
+      "269D",
+      "273C",
+      "273P",
+      "278A",
+      "278P",
+      "278X"
+     ]
+    },
+    {
+     "name": "WO YIP HOP ROAD OUTSIDE CHUK SHUE HOUSE OF LEI MUK SHUE ESTATE",
+     "name_zh": "和宜合道, 梨木樹邨竹樹樓外",
+     "distance_m": 1540,
+     "routes": [
+      "GMB 403",
+      "GMB 403A",
+      "GMB 403P",
+      "GMB 403X",
+      "GMB 406"
      ]
     }
    ]
@@ -4817,7 +6911,32 @@
    ]
   },
   "nat_19": {
-   "start": [],
+   "start": [
+    {
+     "name": "TAI TONG SHAN ROAD",
+     "name_zh": "大棠山路",
+     "distance_m": 2160,
+     "routes": [
+      "K66"
+     ]
+    },
+    {
+     "name": "TAI TONG WONG NAI TUN TSUEN",
+     "name_zh": "大棠黃泥墩村",
+     "distance_m": 2280,
+     "routes": [
+      "K66"
+     ]
+    },
+    {
+     "name": "TAI TONG ROUNDABOUT",
+     "name_zh": "大棠迴旋處",
+     "distance_m": 2290,
+     "routes": [
+      "K66"
+     ]
+    }
+   ],
    "finish": [
     {
      "name": "SEA CREST VILLA PHASE 3",
@@ -4848,12 +6967,118 @@
    ]
   },
   "nat_1": {
-   "start": [],
-   "finish": []
+   "start": [
+    {
+     "name": "LUEN YICK FISHERMEN VILLAGE",
+     "name_zh": "聯益漁村",
+     "distance_m": 1050,
+     "routes": [
+      "GMB 20K"
+     ]
+    },
+    {
+     "name": "SAM MUN TSAI",
+     "name_zh": "三門仔",
+     "distance_m": 1230,
+     "routes": [
+      "74K"
+     ]
+    },
+    {
+     "name": "SAM MUN TSAI ROAD, OPPOSITE SPRINGDALE GARDEN",
+     "name_zh": "三門仔路, 暉曜花園對面",
+     "distance_m": 1230,
+     "routes": [
+      "GMB 20K"
+     ]
+    }
+   ],
+   "finish": [
+    {
+     "name": "TAI MEI TUK BUS TERMINUS",
+     "name_zh": "大美督總站",
+     "distance_m": 1770,
+     "routes": [
+      "72C",
+      "73P",
+      "74E",
+      "75K",
+      "75P",
+      "275R"
+     ]
+    },
+    {
+     "name": "TAI MEI TUK PUBLIC TRANSPORT INTERCHANGE",
+     "name_zh": "大美督公共運輸交匯處",
+     "distance_m": 1790,
+     "routes": [
+      "GMB 20C"
+     ]
+    },
+    {
+     "name": "TING KOK ROAD, LUNG MEI VILLAGE",
+     "name_zh": "汀角路, 龍尾村",
+     "distance_m": 1810,
+     "routes": [
+      "GMB 20C",
+      "GMB 20R"
+     ]
+    }
+   ]
   },
   "nat_6": {
-   "start": [],
-   "finish": []
+   "start": [
+    {
+     "name": "TAI TONG SHAN ROAD",
+     "name_zh": "大棠山路",
+     "distance_m": 1180,
+     "routes": [
+      "K66"
+     ]
+    },
+    {
+     "name": "TAI TONG ROUNDABOUT",
+     "name_zh": "大棠迴旋處",
+     "distance_m": 1220,
+     "routes": [
+      "K66"
+     ]
+    },
+    {
+     "name": "TAI TONG WONG NAI TUN TSUEN",
+     "name_zh": "大棠黃泥墩村",
+     "distance_m": 1350,
+     "routes": [
+      "K66"
+     ]
+    }
+   ],
+   "finish": [
+    {
+     "name": "TAI TONG SHAN ROAD",
+     "name_zh": "大棠山路",
+     "distance_m": 1710,
+     "routes": [
+      "K66"
+     ]
+    },
+    {
+     "name": "TAI TONG ROUNDABOUT",
+     "name_zh": "大棠迴旋處",
+     "distance_m": 1760,
+     "routes": [
+      "K66"
+     ]
+    },
+    {
+     "name": "TAI TONG WONG NAI TUN TSUEN",
+     "name_zh": "大棠黃泥墩村",
+     "distance_m": 1870,
+     "routes": [
+      "K66"
+     ]
+    }
+   ]
   },
   "tre_13": {
    "start": [
@@ -5083,6 +7308,27 @@
       "21",
       "23"
      ]
+    },
+    {
+     "name": "NGONG PING",
+     "name_zh": "昂坪",
+     "distance_m": 1120,
+     "routes": [
+      "1R",
+      "2",
+      "21",
+      "23"
+     ]
+    },
+    {
+     "name": "SAN HOI TING",
+     "name_zh": "山海亭",
+     "distance_m": 2200,
+     "routes": [
+      "2",
+      "21",
+      "23"
+     ]
     }
    ],
    "finish": [
@@ -5094,12 +7340,83 @@
       "21",
       "23"
      ]
+    },
+    {
+     "name": "NGONG PING",
+     "name_zh": "昂坪",
+     "distance_m": 1020,
+     "routes": [
+      "1R",
+      "2",
+      "21",
+      "23"
+     ]
+    },
+    {
+     "name": "SAN HOI TING",
+     "name_zh": "山海亭",
+     "distance_m": 1990,
+     "routes": [
+      "2",
+      "21",
+      "23"
+     ]
     }
    ]
   },
   "tre_14": {
-   "start": [],
-   "finish": []
+   "start": [
+    {
+     "name": "TAI TONG SHAN ROAD",
+     "name_zh": "大棠山路",
+     "distance_m": 1160,
+     "routes": [
+      "K66"
+     ]
+    },
+    {
+     "name": "TAI TONG ROUNDABOUT",
+     "name_zh": "大棠迴旋處",
+     "distance_m": 1210,
+     "routes": [
+      "K66"
+     ]
+    },
+    {
+     "name": "TAI TONG WONG NAI TUN TSUEN",
+     "name_zh": "大棠黃泥墩村",
+     "distance_m": 1330,
+     "routes": [
+      "K66"
+     ]
+    }
+   ],
+   "finish": [
+    {
+     "name": "TAI TONG SHAN ROAD",
+     "name_zh": "大棠山路",
+     "distance_m": 1160,
+     "routes": [
+      "K66"
+     ]
+    },
+    {
+     "name": "TAI TONG ROUNDABOUT",
+     "name_zh": "大棠迴旋處",
+     "distance_m": 1210,
+     "routes": [
+      "K66"
+     ]
+    },
+    {
+     "name": "TAI TONG WONG NAI TUN TSUEN",
+     "name_zh": "大棠黃泥墩村",
+     "distance_m": 1330,
+     "routes": [
+      "K66"
+     ]
+    }
+   ]
   },
   "tre_8": {
    "start": [
@@ -5228,8 +7545,63 @@
    ]
   },
   "tre_6": {
-   "start": [],
-   "finish": []
+   "start": [
+    {
+     "name": "TAI AU MUN",
+     "name_zh": "大坳門",
+     "distance_m": 1150,
+     "routes": [
+      "91"
+     ]
+    },
+    {
+     "name": "TAI AU MUN ROAD, NEAR TAI WAN TAU ROAD",
+     "name_zh": "大坳門路, 近大環頭路",
+     "distance_m": 1160,
+     "routes": [
+      "GMB 16",
+      "GMB 103"
+     ]
+    },
+    {
+     "name": "CLEAR WATER BAY ROAD, NEAR TAI AU MUN",
+     "name_zh": "清水灣道, 近大坳門",
+     "distance_m": 1160,
+     "routes": [
+      "GMB 16"
+     ]
+    }
+   ],
+   "finish": [
+    {
+     "name": "TAI AU MUN ROAD, NEAR CLEAR WATER BAY FIRST BEACH",
+     "name_zh": "大坳門路, 近清水灣第一灘",
+     "distance_m": 1020,
+     "routes": [
+      "GMB 16"
+     ]
+    },
+    {
+     "name": "CLEAR WATER BAY 1ST BEACH",
+     "name_zh": "清水灣第一灘",
+     "distance_m": 1020,
+     "routes": [
+      "91",
+      "91R",
+      "91S"
+     ]
+    },
+    {
+     "name": "TAI AU MUN ROAD, NEAR CLEAR WATER BAY GARDEN",
+     "name_zh": "大坳門路, 近清水灣花園",
+     "distance_m": 1040,
+     "routes": [
+      "GMB 16",
+      "GMB 103",
+      "GMB 103M"
+     ]
+    }
+   ]
   },
   "tre_12": {
    "start": [
@@ -5352,8 +7724,78 @@
    ]
   },
   "tre_4": {
-   "start": [],
-   "finish": []
+   "start": [
+    {
+     "name": "WONG NAI CHUNG RESERVOIR PARK, WONG NAI CHUNG GAP ROAD",
+     "name_zh": "黃泥涌水塘公園, 黃泥涌峽道",
+     "distance_m": 1210,
+     "routes": [
+      "1M",
+      "6",
+      "41A",
+      "63",
+      "76",
+      "A17"
+     ]
+    },
+    {
+     "name": "WONG NAI CHUNG GAP ROAD, OPPOSITE HONG KONG CRICKET CLUB",
+     "name_zh": "黃泥涌峽道, 香港木球會對面",
+     "distance_m": 1270,
+     "routes": [
+      "GMB 5"
+     ]
+    },
+    {
+     "name": "TAI TAM RESERVOIR ROAD, WONG NAI CHUNG GAP ROAD",
+     "name_zh": "大潭水塘道, 黃泥涌峽道",
+     "distance_m": 1280,
+     "routes": [
+      "1M",
+      "6",
+      "41A",
+      "63",
+      "76",
+      "A17"
+     ]
+    }
+   ],
+   "finish": [
+    {
+     "name": "WONG NAI CHUNG RESERVOIR PARK, WONG NAI CHUNG GAP ROAD",
+     "name_zh": "黃泥涌水塘公園, 黃泥涌峽道",
+     "distance_m": 1170,
+     "routes": [
+      "1M",
+      "6",
+      "41A",
+      "63",
+      "76",
+      "A17"
+     ]
+    },
+    {
+     "name": "WONG NAI CHUNG GAP ROAD, OPPOSITE HONG KONG CRICKET CLUB",
+     "name_zh": "黃泥涌峽道, 香港木球會對面",
+     "distance_m": 1230,
+     "routes": [
+      "GMB 5"
+     ]
+    },
+    {
+     "name": "TAI TAM RESERVOIR ROAD, WONG NAI CHUNG GAP ROAD",
+     "name_zh": "大潭水塘道, 黃泥涌峽道",
+     "distance_m": 1240,
+     "routes": [
+      "1M",
+      "6",
+      "41A",
+      "63",
+      "76",
+      "A17"
+     ]
+    }
+   ]
   },
   "tre_9": {
    "start": [
@@ -5728,7 +8170,102 @@
    ]
   },
   "oth_22": {
-   "start": [],
+   "start": [
+    {
+     "name": "HO CHUNG ROAD, KAI HAM",
+     "name_zh": "蠔涌路, 界咸",
+     "distance_m": 1690,
+     "routes": [
+      "GMB 2"
+     ]
+    },
+    {
+     "name": "TATE'S CAIRN TUNNEL BUS-BUS INTERCHANGE",
+     "name_zh": "大老山隧道巴士轉乘站",
+     "distance_m": 1960,
+     "routes": [
+      "74",
+      "74B",
+      "74C",
+      "74D",
+      "74E",
+      "74F",
+      "74P",
+      "74X",
+      "75X",
+      "78C",
+      "78P",
+      "78X",
+      "80X",
+      "82X",
+      "83A",
+      "83X",
+      "84M",
+      "85M",
+      "85P",
+      "85S",
+      "85X",
+      "88",
+      "88X",
+      "89C",
+      "89D",
+      "89X",
+      "90",
+      "96",
+      "97",
+      "272S",
+      "274X",
+      "275X",
+      "277A",
+      "277B",
+      "277E",
+      "277P",
+      "277X",
+      "307",
+      "307A",
+      "307P",
+      "373",
+      "382",
+      "589",
+      "673",
+      "673A",
+      "673P",
+      "678",
+      "679",
+      "680",
+      "680B",
+      "680P",
+      "680X",
+      "681",
+      "681P",
+      "682",
+      "682A",
+      "682B",
+      "682P",
+      "798",
+      "798A",
+      "798P",
+      "798X",
+      "N307",
+      "N680",
+      "T74",
+      "T80",
+      "T277",
+      "X89D"
+     ]
+    },
+    {
+     "name": "TSZ WAN SHAN ROAD, OUTSIDE LOK WAH STREET PLAYGROUND",
+     "name_zh": "慈雲山道, 樂華街遊樂場外",
+     "distance_m": 2260,
+     "routes": [
+      "GMB 19",
+      "GMB 19M",
+      "GMB 19S",
+      "GMB 20"
+     ]
+    }
+   ],
    "finish": [
     {
      "name": "PHOENIX HOUSE, LUNG CHEUNG ROAD",
@@ -5919,16 +8456,169 @@
    ]
   },
   "oth_27": {
-   "start": [],
-   "finish": []
+   "start": [
+    {
+     "name": "SHA TAU KOK BUS TERMINUS",
+     "name_zh": "沙頭角總站",
+     "distance_m": 4790,
+     "routes": [
+      "78",
+      "78K",
+      "78S",
+      "277A",
+      "N78"
+     ]
+    },
+    {
+     "name": "SHA TAU KOK PUBLIC TRANSPORT INTERCHANGE",
+     "name_zh": "沙頭角公共運輸交匯處",
+     "distance_m": 4800,
+     "routes": [
+      "GMB 55K",
+      "GMB 55S"
+     ]
+    }
+   ],
+   "finish": [
+    {
+     "name": "SHA TAU KOK BUS TERMINUS",
+     "name_zh": "沙頭角總站",
+     "distance_m": 4640,
+     "routes": [
+      "78",
+      "78K",
+      "78S",
+      "277A",
+      "N78"
+     ]
+    },
+    {
+     "name": "SHA TAU KOK PUBLIC TRANSPORT INTERCHANGE",
+     "name_zh": "沙頭角公共運輸交匯處",
+     "distance_m": 4650,
+     "routes": [
+      "GMB 55K",
+      "GMB 55S"
+     ]
+    }
+   ]
   },
   "oth_29": {
-   "start": [],
-   "finish": []
+   "start": [
+    {
+     "name": "HOI HA ROAD, ENTRANCE OF HAI HA VILLAGE",
+     "name_zh": "海下路, 海下村入口",
+     "distance_m": 2940,
+     "routes": [
+      "GMB 7"
+     ]
+    },
+    {
+     "name": "TAI TAN",
+     "name_zh": "大灘",
+     "distance_m": 3950,
+     "routes": [
+      "94",
+      "96R",
+      "289R"
+     ]
+    },
+    {
+     "name": "KO TONG HA YEUNG",
+     "name_zh": "高塘下洋",
+     "distance_m": 3950,
+     "routes": [
+      "94",
+      "96R",
+      "289R"
+     ]
+    }
+   ],
+   "finish": [
+    {
+     "name": "HOI HA ROAD, ENTRANCE OF HAI HA VILLAGE",
+     "name_zh": "海下路, 海下村入口",
+     "distance_m": 3400,
+     "routes": [
+      "GMB 7"
+     ]
+    },
+    {
+     "name": "TSENG TAU TSUEN",
+     "name_zh": "十四鄉, 井頭村外",
+     "distance_m": 4220,
+     "routes": [
+      "GMB 807K",
+      "GMB 807S"
+     ]
+    },
+    {
+     "name": "KO TONG",
+     "name_zh": "高塘",
+     "distance_m": 4290,
+     "routes": [
+      "94",
+      "96R",
+      "289R"
+     ]
+    }
+   ]
   },
   "oth_30": {
-   "start": [],
-   "finish": []
+   "start": [
+    {
+     "name": "HONG KIN ROAD, NEAR LAKE COURT",
+     "name_zh": "康健路, 近泰湖閣",
+     "distance_m": 1820,
+     "routes": [
+      "GMB 4A"
+     ]
+    },
+    {
+     "name": "HONG KIN ROAD, NEAR MING SHUN VILLAGE 201",
+     "name_zh": "康健路, 近明順村２０１號",
+     "distance_m": 1930,
+     "routes": [
+      "GMB 4",
+      "GMB 4A"
+     ]
+    },
+    {
+     "name": "HONG KIN ROAD, NEAR 明發樓, MAN YEE FISHERMEN ESTATE",
+     "name_zh": "康健路, 近萬宜漁村明發樓",
+     "distance_m": 1930,
+     "routes": [
+      "GMB 4A"
+     ]
+    }
+   ],
+   "finish": [
+    {
+     "name": "HONG KIN ROAD, NEAR LAKE COURT",
+     "name_zh": "康健路, 近泰湖閣",
+     "distance_m": 2000,
+     "routes": [
+      "GMB 4A"
+     ]
+    },
+    {
+     "name": "HONG KIN ROAD, NEAR 明發樓, MAN YEE FISHERMEN ESTATE",
+     "name_zh": "康健路, 近萬宜漁村明發樓",
+     "distance_m": 2050,
+     "routes": [
+      "GMB 4A"
+     ]
+    },
+    {
+     "name": "HONG KIN ROAD, NEAR MING SHUN VILLAGE 201",
+     "name_zh": "康健路, 近明順村２０１號",
+     "distance_m": 2050,
+     "routes": [
+      "GMB 4",
+      "GMB 4A"
+     ]
+    }
+   ]
   },
   "oth_40": {
    "start": [],
@@ -6110,7 +8800,35 @@
    ]
   },
   "oth_31": {
-   "start": [],
+   "start": [
+    {
+     "name": "THE WEST DAM, HIGH ISLAND RESERVOIR",
+     "name_zh": "萬宜水庫西壩",
+     "distance_m": 2940,
+     "routes": [
+      "GMB 9A"
+     ]
+    },
+    {
+     "name": "LADY MACLEHOSE HOLIDAY VILLAGE",
+     "name_zh": "麥理浩夫人度假村",
+     "distance_m": 3790,
+     "routes": [
+      "94",
+      "96R",
+      "289R",
+      "GMB 9"
+     ]
+    },
+    {
+     "name": "THE EAST DAM, HIGH ISLAND RESERVOIR",
+     "name_zh": "萬宜水庫東壩",
+     "distance_m": 3820,
+     "routes": [
+      "GMB 9A"
+     ]
+    }
+   ],
    "finish": [
     {
      "name": "PAK TAM AU",

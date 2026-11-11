@@ -1,6 +1,16 @@
 """Nearest bus stops, on a tiny fake dataset (no network, no GTFS)."""
 
-from app.transport import distance_m, nearest_stops, route_label
+from app.transport import display_name, distance_m, nearest_stops, route_label
+
+
+def test_stop_names_are_title_cased():
+    assert display_name("TO TEI WAN, SHEK O ROAD") == "To Tei Wan, Shek O Road"
+    assert display_name("CAPE D'AGUILAR, CAPE D'AGUILAR ROAD") == "Cape D'Aguilar, Cape D'Aguilar Road"
+    assert display_name("TATE'S CAIRN TUNNEL BUS-BUS INTERCHANGE") == "Tate's Cairn Tunnel Bus-Bus Interchange"
+    assert display_name("SAI SHA ROAD, NEAR SHUI LONG WO") == "Sai Sha Road, near Shui Long Wo"
+    assert display_name("THE PEAK GALLERIA (BUS TERMINUS UNDER)") == "The Peak Galleria (Bus Terminus Under)"
+    assert display_name("LAYBY OPPOSITE TO SHEK LEI STREET, TO KWA WAN BBQ SITE") == "Layby opposite to Shek Lei Street, To Kwa Wan BBQ Site"
+    assert display_name("21A SHEK O ROAD, MA ON SHAN MTR STATION") == "21A Shek O Road, Ma On Shan MTR Station"
 
 ORIGIN = (22.0, 114.0)
 # 0.001 degrees of latitude is about 111 m

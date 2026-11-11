@@ -20,7 +20,7 @@ import httpx
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "backend"))
-from app.transport import MAX_M, _route_key, nearest_stops, route_label  # noqa: E402
+from app.transport import MAX_M, _route_key, display_name, nearest_stops, route_label  # noqa: E402
 
 DATA = ROOT / "data"
 RAW = DATA / "gtfs_raw"
@@ -72,7 +72,7 @@ def build_stops() -> list[dict]:
     for s in rows("en", "stops"):
         if s["stop_id"] in served:
             out.append({
-                "name": clean_name(s["stop_name"]),
+                "name": display_name(clean_name(s["stop_name"])),
                 "name_zh": zh.get(s["stop_id"], ""),
                 "lat": float(s["stop_lat"]),
                 "lng": float(s["stop_lon"]),

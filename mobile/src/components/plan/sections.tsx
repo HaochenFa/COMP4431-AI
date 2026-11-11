@@ -127,12 +127,36 @@ export function Timeline({ steps }: { steps: TripPlan['timeline'] }) {
   );
 }
 
-const MAX_ROUTES = 6;
+const MAX_ROUTES = 8;
+const GMB = 'GMB ';
 
-/** A busy stop has up to 50 routes: name the first few and count the rest. */
-function routeList(routes: string[]) {
-  if (routes.length <= MAX_ROUTES) return routes.join(', ');
-  return `${routes.slice(0, MAX_ROUTES).join(', ')} +${routes.length - MAX_ROUTES} more`;
+/** Route numbers as chips. A busy stop has up to 70 routes: show the first few and count the rest. */
+function RouteChips({ routes }: { routes: string[] }) {
+  const { c } = useTheme();
+  const rest = routes.length - MAX_ROUTES;
+  return (
+    <View style={styles.routes}>
+      {routes.slice(0, MAX_ROUTES).map((r) => (
+        <View key={r} style={[styles.route, { backgroundColor: c.surface2 }]}>
+          <T v="footnote" weight="600" style={styles.routeText}>
+            {r}
+          </T>
+        </View>
+      ))}
+      {rest > 0 ? (
+        <T v="footnote" color="text2">
+          +{rest} more
+        </T>
+      ) : null}
+    </View>
+  );
+}
+
+/** The feed lists green minibuses with buses; a stop only they serve gets its own icon and label. */
+function stopKind(routes: string[]): { icon: SFSymbol; label: string; routes: string[] } {
+  const minibus = routes.filter((r) => r.startsWith(GMB));
+  if (minibus.length === routes.length) return { icon: 'bus', label: 'Green minibus', routes: routes.map((r) => r.slice(GMB.length)) };
+  return { icon: 'bus.doubledecker', label: minibus.length ? 'Bus and minibus' : 'Bus', routes };
 }
 
 /** Stops are listed up to 5 km out (backend MAX_M): metres up to 1 km, then km. */
@@ -141,17 +165,20 @@ function stopDistance(m: number) {
 }
 
 function StopRows({ stops }: { stops: BusStop[] }) {
-  if (!stops.length) return <ListRow icon="bus" iconColor="text3" title={<T color="text2">No bus stop within 5 km</T>} />;
-  return stops.map((s) => (
-    <ListRow
-      key={`${s.name}-${s.distance_m}`}
-      icon="bus"
-      title={s.name}
-      titleLines={2}
-      subtitle={`${stopDistance(s.distance_m)} away · ${routeList(s.routes)}`}
-      subtitleLines={2}
-    />
-  ));
+  if (!stops.length) return <ListRow icon="bus.doubledecker" iconColor="text3" title={<T color="text2">No bus stop within 5 km</T>} />;
+  return stops.map((s) => {
+    const kind = stopKind(s.routes);
+    return (
+      <ListRow
+        key={`${s.name}-${s.distance_m}`}
+        icon={kind.icon}
+        title={s.name}
+        titleLines={2}
+        subtitle={`${stopDistance(s.distance_m)} away · ${kind.label}`}
+        below={<RouteChips routes={kind.routes} />}
+      />
+    );
+  });
 }
 
 /** "Getting there & back": the nearest bus stops to the trail's start and finish. Official data shown as is; the agent never names routes. */
@@ -271,6 +298,9 @@ const styles = StyleSheet.create({
   flex: { flex: 1 },
   groups: { gap: 14 },
   groupLabel: { marginBottom: 6, marginLeft: 4 },
+  routes: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 6, marginTop: 8 },
+  route: { paddingHorizontal: 8, paddingVertical: 2, borderRadius: 7 },
+  routeText: { fontVariant: ['tabular-nums'] },
   badges: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
   step: { flexDirection: 'row', gap: 12, minHeight: 44 },
   time: { width: 96, fontVariant: ['tabular-nums'], paddingTop: 1 },

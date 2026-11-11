@@ -42,6 +42,40 @@ def nearest_stops(point: tuple[float, float], stops: list[dict[str, Any]], limit
     ]
 
 
+ACRONYMS = {
+    "MTR", "BBI", "PTI", "HK", "LR", "LRT", "II", "III", "IV", "HKU", "HKUST", "CUHK", "HKSAR", "YMCA", "YWCA",
+    "CLP", "GPO", "PLA", "APM", "IFC", "ICC", "HSBC", "KMB", "CTB", "GMB", "BBQ",
+}
+# Only English function words: "to", "on" and "in" are also syllables of place names (To Kwa Wan, Ma On Shan).
+SMALL_WORDS = {"of", "and", "the", "at", "near", "outside", "opposite"}
+
+
+def _cap(part: str) -> str:
+    """One run of letters: 'D'AGUILAR' -> 'D'Aguilar', 'TATE'S' -> 'Tate's'."""
+    head, sep, tail = part.partition("'")
+    head = head[:1].upper() + head[1:].lower()
+    if not sep:
+        return head
+    return head + sep + (_cap(tail) if len(tail) > 1 else tail.lower())
+
+
+def display_name(raw: str) -> str:
+    """The feed's ALL-CAPS stop name in title case: 'TO TEI WAN, SHEK O ROAD' -> 'To Tei Wan, Shek O Road'.
+
+    Acronyms and anything with a digit ('21A') stay as they are.
+    """
+    words = []
+    for i, word in enumerate(raw.split()):
+        bare = word.strip("(),.")
+        if bare in ACRONYMS or any(ch.isdigit() for ch in word):
+            words.append(word)
+        elif i > 0 and (bare.lower() in SMALL_WORDS or (bare == "TO" and words[-1] == "opposite")):
+            words.append(word.lower())
+        else:
+            words.append(re.sub(r"[A-Za-z']+", lambda m: _cap(m[0]), word))
+    return " ".join(words)
+
+
 def route_label(short_name: str, agency_id: str) -> str | None:
     """The route number as shown ("9", "GMB 9A"), or None for a route with no number.
 

@@ -148,7 +148,7 @@ function StopRows({ stops }: { stops: BusStop[] }) {
       icon="bus"
       title={s.name}
       titleLines={2}
-      subtitle={`${stopDistance(s.distance_m)} away ·${routeList(s.routes)}`}
+      subtitle={`${stopDistance(s.distance_m)} away · ${routeList(s.routes)}`}
       subtitleLines={2}
     />
   ));

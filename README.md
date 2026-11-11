@@ -12,7 +12,7 @@ TrailAI is a pre-trip feasibility agent. You describe a hike loosely ("Saturday,
 - a day plan, drawn on a map, with every trail, weather and sunset figure cited, or
 - a no-go card that gives the evidence and an alternative.
 
-There is no transport data yet, so travel to and from a trail is shown as an approximate block with no route numbers.
+There is no route planner yet: the agent still shows travel to and from a trail as an approximate block with no route numbers. The plan and trail pages do list the nearest bus stops to the start and finish as official reference data (see "Getting there & back" below).
 
 ## Features
 
@@ -22,6 +22,7 @@ There is no transport data yet, so travel to and from a trail is shown as an app
 
 **Additional**
 
+- **Getting there & back.** The plan and trail pages list the nearest bus stops (up to 3 within 1 km, straight-line distance, route numbers) to each trail's start and finish, from the Transport Department GTFS feed. It is display-only data like the trail stats: the agent never sees it or names routes, and the safety gate is unchanged.
 - **Provider-agnostic agent harness.** One loop runs on the Anthropic Messages API, OpenAI Chat Completions (and any OpenAI-compatible server: xAI Grok, DeepSeek, OpenRouter, Ollama), or the OpenAI Responses API (OpenAI or xAI). You switch with `LLM_PROFILE` in `backend/config.yaml`.
 - **Safety gate.** `present_plan` and `refuse` are blocked until the agent has actually checked closures and weather (and sunset, for plans) for those trails on that date. A plan is also blocked when any of its figures (km, hours, sunset) differ from what the tools returned, or when it names a transport route no tool returned. Plans beyond the HKO 9-day forecast are marked Provisional, not Go.
 - **Question cards.** When information is missing, the agent pauses and shows single-choice, multiple-choice or free-text cards. It resumes when you answer.
@@ -70,6 +71,12 @@ To refresh the frozen trail dataset (takes about 1 minute; polite scraping of hi
 
 ```bash
 uv --project backend run python scripts/ingest_afcd.py
+```
+
+To rebuild the bus stops near each trail (`data/transport.json`; downloads the GTFS feed to the gitignored `data/gtfs_raw/`, add `--refresh` to download it again):
+
+```bash
+uv --project backend run python scripts/build_transport.py
 ```
 
 ### Local models (optional, no API key)
@@ -127,8 +134,8 @@ In the app, open Settings (gear on the Plan tab) and set the backend URL:
 ```
 backend/   FastAPI app: app/llm (3 provider adapters + embeddings), app/agent (harness, session, prompts), app/tools, app/skills; eval/
 mobile/    Expo app: src/app (tabs, chat, plan, trail, map, settings), src/components (ui, chat, trail, plan), src/lib (protocol, state, REST)
-data/      trails.json, trails_raw.geojson, gpx/, snapshots/ (from scripts/ingest_afcd.py); knowledge.json (scripts/build_knowledge.py); photos/ (scripts/fetch_photos.py); tts/ (voice model, python -m app.tts)
+data/      trails.json, trails_raw.geojson, gpx/, snapshots/ (from scripts/ingest_afcd.py); transport.json (scripts/build_transport.py); knowledge.json (scripts/build_knowledge.py); photos/ (scripts/fetch_photos.py); tts/ (voice model, python -m app.tts)
 docs/      project spec
 ```
 
-Data sources: AFCD (DATA.GOV.HK / CSDI), hiking.gov.hk, and the Hong Kong Observatory Open Data API.
+Data sources: AFCD (DATA.GOV.HK / CSDI), hiking.gov.hk, the Hong Kong Observatory Open Data API, and the Transport Department's public transport GTFS feed (DATA.GOV.HK) for bus stops.

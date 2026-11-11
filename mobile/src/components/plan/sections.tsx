@@ -12,7 +12,7 @@ import { scenarioLabel } from '@/lib/scenarios';
 import { useSettings } from '@/lib/settings';
 import { speakOutcome, stopSpeaking, useSpeechState } from '@/lib/speech';
 import { useTrails } from '@/lib/trails';
-import type { Citation, ToolStep, TripPlan } from '@/lib/types';
+import type { BusStop, Citation, ToolStep, TrailAccess, TripPlan } from '@/lib/types';
 import { warningName } from '@/lib/warnings';
 
 const CHECK: Record<string, { label: string; icon: SFSymbol }> = {
@@ -127,6 +127,51 @@ export function Timeline({ steps }: { steps: TripPlan['timeline'] }) {
   );
 }
 
+function StopRows({ stops }: { stops: BusStop[] }) {
+  if (!stops.length) return <ListRow icon="bus" iconColor="text3" title={<T color="text2">No bus stop within 1 km</T>} />;
+  return stops.map((s) => (
+    <ListRow
+      key={`${s.name}-${s.distance_m}`}
+      icon="bus"
+      title={s.name}
+      titleLines={2}
+      subtitle={`${s.distance_m} m away · ${s.routes.join(', ')}`}
+      subtitleLines={2}
+    />
+  ));
+}
+
+/** "Getting there & back": the nearest bus stops to the trail's start and finish. Official data shown as is; the agent never names routes. */
+export function AccessSection({ access }: { access?: TrailAccess | null }) {
+  if (!access) return null;
+  return (
+    <View>
+      <SectionTitle>Getting there & back</SectionTitle>
+      <View style={styles.groups}>
+        <View>
+          <T v="footnote" color="text2" weight="600" style={styles.groupLabel}>
+            Start
+          </T>
+          <ListSection inset={52}>
+            <StopRows stops={access.start} />
+          </ListSection>
+        </View>
+        <View>
+          <T v="footnote" color="text2" weight="600" style={styles.groupLabel}>
+            Finish
+          </T>
+          <ListSection
+            inset={52}
+            footer="Straight-line distances from the trail's start and finish. Source: Transport Department. Check routes and times with the operator before you go."
+          >
+            <StopRows stops={access.finish} />
+          </ListSection>
+        </View>
+      </View>
+    </View>
+  );
+}
+
 /** "How this plan was made": collapsed by default, numbered official sources that open in-app. */
 export function Sources({ items, title = 'How this plan was made' }: { items: Citation[]; title?: string }) {
   const [open, setOpen] = useState(false);
@@ -210,6 +255,8 @@ export function ActionBar({ children }: { children: ReactNode }) {
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
+  groups: { gap: 14 },
+  groupLabel: { marginBottom: 6, marginLeft: 4 },
   badges: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
   step: { flexDirection: 'row', gap: 12, minHeight: 44 },
   time: { width: 96, fontVariant: ['tabular-nums'], paddingTop: 1 },

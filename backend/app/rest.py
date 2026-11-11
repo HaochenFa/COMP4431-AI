@@ -99,7 +99,7 @@ def build_router(sessions: SessionStore, toolbox: ToolBox) -> APIRouter:
         if not t:
             raise HTTPException(404, "unknown trail")
         return {**t, "segments": data.geometries().get(trail_id, []), "profile": data.profiles().get(trail_id),
-                "photo": _has_photo(trail_id), "landmarks": data.landmarks(t)}
+                "photo": _has_photo(trail_id), "landmarks": data.landmarks(t), "access": data.access(trail_id)}
 
     @router.get("/conditions")
     async def conditions(session: str = "default") -> dict[str, Any]:

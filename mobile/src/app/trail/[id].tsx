@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import Animated, { useAnimatedScrollHandler, useSharedValue } from 'react-native-reanimated';
 
-import { ActionBar } from '@/components/plan/sections';
+import { AccessSection, ActionBar } from '@/components/plan/sections';
 import { ElevationChart } from '@/components/trail/elevation-chart';
 import { TrailHero } from '@/components/trail/trail-hero';
 import { TrailMap } from '@/components/trail/trail-map';
@@ -140,6 +140,8 @@ export default function TrailPage() {
               </Press>
             </View>
           ) : null}
+
+          <AccessSection access={trail.access} />
 
           {trail.description_zh ? (
             <View>

@@ -2,7 +2,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { Linking, StyleSheet, View } from 'react-native';
 import Animated, { useAnimatedScrollHandler, useSharedValue } from 'react-native-reanimated';
 
-import { ActionBar, Badges, DemoChip, PlanChip, ReadAloudButton, Refine, SafetyChecks, Sources, Timeline } from '@/components/plan/sections';
+import { AccessSection, ActionBar, Badges, DemoChip, PlanChip, ReadAloudButton, Refine, SafetyChecks, Sources, Timeline } from '@/components/plan/sections';
 import { ElevationChart } from '@/components/trail/elevation-chart';
 import { TrailHero } from '@/components/trail/trail-hero';
 import { TrailImage } from '@/components/trail/trail-image';
@@ -130,6 +130,8 @@ function GoPage({ id, plan, checks }: { id: string; plan: TripPlan; checks: Outc
               </Press>
             </View>
           ) : null}
+
+          <AccessSection access={trail?.access} />
 
           {plan.backup ? (
             <ListSection title="If plans change">

@@ -27,7 +27,7 @@ export function T({
   center,
   style,
   ...rest
-}: TextProps & { v?: TypeVariant; color?: ColorName | string; weight?: TextStyle['fontWeight']; center?: boolean }) {
+}: TextProps & { v?: TypeVariant; color?: ColorName | string; weight?: TextStyle['fontWeight']; center?: boolean; lang?: string }) {
   const { c } = useTheme();
   return <Text {...rest} style={[type[v], { color: pick(c, color) }, weight && { fontWeight: weight }, center && styles.center, style]} />;
 }

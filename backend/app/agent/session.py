@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import asyncio
 import json
+import os
+import re
 import time
 from collections import deque
 from dataclasses import dataclass, field
@@ -16,6 +18,12 @@ Emit = Callable[[dict[str, Any]], Awaitable[None]]
 
 LEDGER_TTL_S = 3600  # closures and warnings change: checks older than this no longer pass the gate
 MISSED_EVENTS = 500
+
+
+def validate_session_id(session_id: str) -> None:
+    # IDs are also trace filenames. Keep CLI/eval punctuation, never path syntax.
+    if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_.:-]{0,159}", session_id):
+        raise ValueError("Invalid session ID")
 
 
 @dataclass
@@ -73,8 +81,14 @@ class Session:
         self.scenario = scenario
 
     def trace(self, event: dict[str, Any]) -> None:
+        validate_session_id(self.id)
         TRACES.mkdir(parents=True, exist_ok=True)
-        with (TRACES / f"{self.id}.jsonl").open("a") as f:
+        path = TRACES / f"{self.id}.jsonl"
+        if path.resolve().parent != TRACES.resolve():
+            raise ValueError("Trace path must stay inside the trace directory")
+        # Do not follow an existing symlink, including one swapped after resolve().
+        fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_APPEND | os.O_NOFOLLOW, 0o600)
+        with os.fdopen(fd, "a") as f:
             f.write(json.dumps({"t": round(time.time(), 3), **event}, ensure_ascii=False) + "\n")
 
 
@@ -83,6 +97,7 @@ class SessionStore:
         self._sessions: dict[str, Session] = {}
 
     def get(self, session_id: str) -> Session:
+        validate_session_id(session_id)
         if session_id not in self._sessions:
             self._sessions[session_id] = Session(session_id)
         return self._sessions[session_id]

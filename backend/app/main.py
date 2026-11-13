@@ -55,8 +55,12 @@ async def health() -> dict[str, Any]:
 
 @app.websocket("/ws/chat")
 async def chat(ws: WebSocket, session: str = "default") -> None:
+    try:
+        s = sessions.get(session)
+    except ValueError:
+        await ws.close(code=1008, reason="Invalid session ID")
+        return
     await ws.accept()
-    s = sessions.get(session)
     conn = _Connection(ws)
 
     async def emit(event: dict[str, Any]) -> None:
@@ -67,11 +71,17 @@ async def chat(ws: WebSocket, session: str = "default") -> None:
             s.missed.append(event)
 
     pending = {"call_id": s.pending.ask_call_id, "cards": s.pending.cards} if s.pending else None
-    await conn.send({"type": "hello", "session": s.id, "scenario": s.scenario, "model": provider.model,
+    if not await conn.send({"type": "hello", "session": s.id, "scenario": s.scenario, "model": provider.model,
                      "waiting_for": pending["call_id"] if pending else None, "pending_ask": pending,
-                     "running": s.lock.locked() or bool(s.missed), "has_history": bool(s.messages)})
+                     "running": s.lock.locked() or bool(s.missed), "has_history": bool(s.messages)}):
+        return
     while s.missed:
-        await conn.send(s.missed.popleft())
+        event = s.missed[0]
+        if not await conn.send(event):
+            return
+        # A running turn can fill the bounded queue while send yields.
+        if s.missed and s.missed[0] is event:
+            s.missed.popleft()
     live[s.id] = conn  # a turn still running for this session now streams to this socket
     tasks: set[asyncio.Task] = set()
     try:

@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import re
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 from typing import Any
 
 from . import data
@@ -36,6 +36,28 @@ SCENARIO_WARNINGS: dict[str, dict[str, dict[str, str]]] = {
 
 def _parse_date(s: str) -> date:
     return date.fromisoformat(s)
+
+
+def _stale_feed(meta: dict[str, Any]) -> bool:
+    # Disk fallbacks are useful for display/demo, but cannot certify live safety.
+    if meta.get("stale") or meta.get("data_from") == "snapshot":
+        return True
+    if fetched := meta.get("fetched_at"):
+        try:
+            age = datetime.now(data.HKT) - datetime.fromisoformat(fetched)
+            return not timedelta(0) <= age <= timedelta(hours=1)
+        except (ValueError, TypeError):
+            return True
+    return False  # deterministic test/evaluation fixtures have no fetch timestamp
+
+
+def _stale_today_forecast(flw: dict[str, Any]) -> bool:
+    if updated := flw.get("updateTime"):
+        try:
+            return datetime.fromisoformat(updated).astimezone(data.HKT).date() != data.today_hk()
+        except (ValueError, TypeError):
+            return True
+    return False
 
 
 def _elevation(tid: str) -> dict[str, Any] | None:
@@ -187,6 +209,9 @@ def register(box: ToolBox) -> None:
                               "like 'hk_8' or 'cty_2'.", is_error=True, summary="unknown trail id")
         rows, meta = await data.closures()
         scenario = ctx.session.scenario
+        if scenario == "live" and _stale_feed(meta):
+            return ToolOutput({"error": "AFCD closures are stale; current closure status cannot be verified.", **meta},
+                              is_error=True, summary="closure data unavailable")
         if scenario.startswith("closure:"):
             forced = scenario.split(":", 1)[1]
             rows = rows + [{"trail_id": forced, "Name_of_Hiking_Trail": data.trails().get(forced, {}).get("name", forced),
@@ -241,12 +266,15 @@ def register(box: ToolBox) -> None:
                        note=f"Beyond the HKO 9-day window (ends {today + timedelta(days=9)}). Plan provisionally and tell the user to re-check nearer the date.")
             return ToolOutput(out, summary="beyond 9-day forecast")
         if d == today:
-            flw, _ = await data.hko("flw")
-            out["forecast"] = {"desc": flw.get("forecastDesc"), "outlook": flw.get("outlook"), "update_time": flw.get("updateTime")}
+            flw, meta = await data.hko("flw")
+            if not _stale_feed(meta) and not _stale_today_forecast(flw):
+                out["forecast"] = {"desc": flw.get("forecastDesc"), "outlook": flw.get("outlook"), "update_time": flw.get("updateTime")}
+            else:
+                out["stale"] = True
         else:
             fnd, meta = await data.hko("fnd")
             day = next((f for f in fnd.get("weatherForecast", []) if f.get("forecastDate") == d.strftime("%Y%m%d")), None)
-            if day:
+            if day and not _stale_feed(meta):
                 out["forecast"] = {
                     "weather": day.get("forecastWeather"),
                     "wind": day.get("forecastWind"),
@@ -255,7 +283,8 @@ def register(box: ToolBox) -> None:
                     "rain_probability": day.get("PSR"),
                 }
             out["update_time"] = fnd.get("updateTime")
-            out.update({k: v for k, v in meta.items() if k == "stale"})
+            if _stale_feed(meta):
+                out["stale"] = True
 
         in_force = {}
         if scenario in SCENARIO_WARNINGS:
@@ -265,7 +294,10 @@ def register(box: ToolBox) -> None:
             out["note"] = f"Demo scenario override active: {scenario}. The app labels it; don't mention it in your reply."
             out["warnings_apply_to"] = f"{today} to {today + timedelta(days=SCENARIO_DAYS)}"
         else:
-            warnsum, _ = await data.hko("warnsum", ttl=120)
+            warnsum, warning_meta = await data.hko("warnsum", ttl=120)
+            if _stale_feed(warning_meta):
+                return ToolOutput({"error": "HKO warnings are stale; current warnings cannot be verified.",
+                                   "date": iso, "stale": True}, is_error=True, summary="warnings unavailable")
             warnings = {k: {"name": v.get("name"), "code": v.get("code"), "type": v.get("type"),
                             **({"issued": v["issueTime"]} if v.get("issueTime") else {})}
                         for k, v in (warnsum or {}).items() if v.get("actionCode") != "CANCEL"}

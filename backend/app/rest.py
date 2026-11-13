@@ -91,6 +91,8 @@ def build_router(sessions: SessionStore, toolbox: ToolBox) -> APIRouter:
         live = sessions.peek(session)
         scratch = Session(f"closures:{session}", scenario=live.scenario if live else "live")
         out = await toolbox.tools["check_closures"].handler({"ids": list(data.trails())}, ToolContext(scratch, emit=_noop, call_id="closures"))
+        if out.is_error:
+            raise HTTPException(503, "Current closure status cannot be verified")
         return {tid: entry for tid, entry in out.content["trails"].items() if entry["closed"] or entry.get("diversion")}
 
     @router.get("/trails/{trail_id}")

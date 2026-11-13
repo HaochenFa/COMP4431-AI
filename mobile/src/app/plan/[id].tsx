@@ -27,14 +27,12 @@ function useOutcome(id: string): Outcome | undefined {
 }
 
 /**
- * Send a follow-up to the agent and return to the conversation. A plan reopened from Recent belongs to an
- * earlier conversation, so then the message has to say which plan it means.
+ * Identify the selected plan even when a newer plan exists in the same conversation.
  */
-function useFollowUp(id: string, about: string) {
+function useFollowUp(about: string) {
   const agent = useAgent();
-  const inChat = agent.items.some((it) => it.id === id);
   return (text: string) => {
-    const message = inChat ? text : `${about}: ${text}`;
+    const message = `${about}: ${text}`;
     if (!agent.send(message)) agent.setDraft(message);
     router.dismissTo('/chat');
   };
@@ -60,7 +58,7 @@ function GoPage({ id, plan, checks }: { id: string; plan: TripPlan; checks: Outc
   const { byId } = useTrails();
   const { trackFor } = useAgent();
   const p = plan.primary;
-  const followUp = useFollowUp(id, `My ${shortDate(plan.date)} plan is ${p.name} (${fmtKm(p.length_km)} km, ${fmtHours(p.hours)})`);
+  const followUp = useFollowUp(`My ${plan.date} plan is ${p.name} [${p.id}] (${fmtKm(p.length_km)} km, ${fmtHours(p.hours)})`);
   const meta = byId[p.id];
   const { trail } = useTrailDetail(p.id);
   const { trail: backupTrail } = useTrailDetail(plan.backup?.id);
@@ -186,7 +184,7 @@ function NoGoPage({ id, refusal, checks }: { id: string; refusal: Refusal; check
   const { byId } = useTrails();
   const first = refusal.trail_ids[0];
   const title = first && byId[first] ? trailTitle(byId[first]) : first;
-  const followUp = useFollowUp(id, `You said no to ${title ?? 'my hike'} on ${shortDate(refusal.date)}`);
+  const followUp = useFollowUp(`You said no to ${title ?? 'my hike'}${first ? ` [${first}]` : ''} on ${refusal.date}`);
   const y = useSharedValue(0);
   const onScroll = useAnimatedScrollHandler((e) => {
     y.value = e.contentOffset.y;

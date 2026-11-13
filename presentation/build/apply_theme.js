@@ -61,11 +61,31 @@ async function applyTheme(deckPath, theme, outPath = deckPath) {
 	if (!zip.file(part)) throw new Error(`${deckPath} has no ${part}; this script is for decks pptxgenjs wrote. Nothing was changed.`);
 	zip.file(part, themeXml(await zip.file(part).async("string"), theme));
 
+	// pptxgenjs 3.x declares one slide master per slide even though it emits only
+	// slideMaster1.xml. Keep content-type entries only for masters that exist.
+	const types = "[Content_Types].xml";
+	zip.file(types, (await zip.file(types).async("string")).replace(
+		/<Override\b[^>]*PartName="(\/ppt\/slideMasters\/slideMaster\d+\.xml)"[^>]*\/>/g,
+		(entry, target) => zip.file(target.slice(1)) ? entry : ""
+	));
+
 	// A scheme color given to a hex-only option is written as <a:srgbClr val="bg2"/>, which is
 	// not a color. pptxgenjs does not warn; stop here instead.
 	for (const name of Object.keys(zip.files)) {
 		if (!name.endsWith(".xml")) continue;
-		const xml = await zip.file(name).async("string");
+		const original = await zip.file(name).async("string");
+		// A local video uses its media action, not a hyperlink relationship. Omit
+		// pptxgenjs's empty optional r:id while preserving the click-to-play action.
+		let xml = original.replace(/(<a:hlinkClick\b[^>]*?) r:id=""(?=[^>]*action="ppaction:\/\/media")/g, "$1");
+		// Flat chart categories need only strRef/strCache. Preserve their workbook
+		// formula and cached points, and leave genuinely multilevel categories alone.
+		xml = xml.replace(/<c:multiLvlStrRef>([\s\S]*?)<\/c:multiLvlStrRef>/g, (entry, body) => {
+			if ((body.match(/<c:lvl>/g) || []).length !== 1) return entry;
+			return "<c:strRef>" + body
+				.replaceAll("c:multiLvlStrCache", "c:strCache")
+				.replace(/<\/?c:lvl>/g, "") + "</c:strRef>";
+		});
+		if (xml !== original) zip.file(name, xml);
 		const bad = xml.match(/<a:srgbClr val="((?![0-9A-Fa-f]{6}")[^"]*)"/);
 		if (bad) throw new Error(`${shown(name)} has an <a:srgbClr> whose val is ${shown(bad[1])}, not six hex digits. Usually a scheme color was given to an option that takes hex only (valGridLine.color, catGridLine.color, shadow.color, or chartColors / invertedColors on a one-series bar chart). Pass the six-digit hex from your theme object there and rebuild. Nothing was changed.`);
 
